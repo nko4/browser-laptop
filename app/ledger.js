@@ -478,7 +478,7 @@ var handleGeneralCommunication = (event) => {
 
     underscore.extend(result, returnValue._internal.cache || {})
   }
-  console.log('\n' + JSON.stringify(underscore.omit(result, [ 'synopsis' ]), null, 2))
+  console.log('\n' + JSON.stringify(underscore.omit(result, [ 'synopsis', 'buyIMG', 'paymentIMG' ]), null, 2))
 
   returnValue.notifyP = false
   event.returnValue = result
