@@ -21,8 +21,8 @@ class ModalOverlay extends ImmutableComponent {
       title = <div className='settingsListTitle' data-l10n-id={this.props.title} />
     }
     return <div className='dialog'>
-      {title}
       {close}
+      {title}
       {this.props.content}
       {button}
     </div>

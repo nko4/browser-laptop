@@ -181,6 +181,9 @@ class BitcoinDashboard extends ImmutableComponent {
     return window.open(url, '_blank')
   }
   hideOverlay (event) {
+    if (event.type === 'message' && (!event.data || !event.data.event || event.data.event !== 'modal_closed')) {
+      return false
+    }
     this.setState({ shouldShowOverlay: false })
   }
   showOverlay (event) {
@@ -188,6 +191,7 @@ class BitcoinDashboard extends ImmutableComponent {
   }
   render () {
     var emptyDialog = true
+    window.addEventListener('message', this.hideOverlay.bind(this), false)
     return <div id='bitcoinDashboard'>
       <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} emptyDialog={emptyDialog} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div>{this.props.statusText}</div>
