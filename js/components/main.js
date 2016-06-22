@@ -351,18 +351,6 @@ class Main extends ImmutableComponent {
         windowActions.setRedirectedBy(frameProps, ruleset, details.url))
     })
 
-    ipc.on(messages.GOT_CANVAS_FINGERPRINTING, (e, details) => {
-      if (!details.length) {
-        return
-      }
-      details.forEach((detail) => {
-        const filteredFrameProps = this.props.windowState.get('frames').filter((frame) => frame.get('location') === detail.url)
-        const description = [detail.type, detail.scriptUrl || detail.url].join(': ')
-        filteredFrameProps.forEach((frameProps) =>
-          windowActions.setBlockedBy(frameProps, 'fingerprintingProtection', description))
-      })
-    })
-
     ipc.on(messages.SHOW_NOTIFICATION, (e, text) => {
       void new window.Notification(text)
     })
@@ -447,14 +435,31 @@ class Main extends ImmutableComponent {
       win.setTitle(activeFrame.get('title'))
     }
 
+    // Handlers for saving window state
     win.on('maximize', function () {
       windowActions.setMaximizeState(true)
     })
+
     win.on('unmaximize', function () {
       windowActions.setMaximizeState(false)
     })
+
+    let moveTimeout = null
     win.on('move', function (event) {
-      windowActions.savePosition(event.sender.getPosition())
+      if (moveTimeout) {
+        clearTimeout(moveTimeout)
+      }
+      moveTimeout = setTimeout(function () {
+        windowActions.savePosition(event.sender.getPosition())
+      }, 1000)
+    })
+
+    win.on('enter-full-screen', function (event) {
+      windowActions.setWindowFullScreen(true)
+    })
+
+    win.on('leave-full-screen', function (event) {
+      windowActions.setWindowFullScreen(false)
     })
   }
 

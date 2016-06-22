@@ -117,12 +117,14 @@ class UrlBarSuggestions extends ImmutableComponent {
       }
       items = items.concat(suggestions.map((suggestion, i) => {
         const currentIndex = index + i
+        const selected = this.activeIndex === currentIndex + 1 || currentIndex === 0 && hasUrlSuffix
         return <li data-index={currentIndex + 1}
           onMouseOver={this.onMouseOver.bind(this)}
           onClick={suggestion.onClick}
           key={suggestion.title}
+          ref={(node) => { selected && (this.selectedElement = node) }}
           className={cx({
-            selected: this.activeIndex === currentIndex + 1 || currentIndex === 0 && hasUrlSuffix,
+            selected,
             suggestionItem: true,
             [suggestion.type]: true
           })}>
@@ -145,8 +147,10 @@ class UrlBarSuggestions extends ImmutableComponent {
     addToItems(historySuggestions, 'historyTitle', locale.translation('historySuggestionTitle'), 'fa-clock-o')
     addToItems(searchSuggestions, 'searchTitle', locale.translation('searchSuggestionTitle'), 'fa-search')
     addToItems(topSiteSuggestions, 'topSiteTitle', locale.translation('topSiteSuggestionTitle'), 'fa-link')
-
-    return <ul className='urlBarSuggestions'>
+    const documentHeight = Number.parseInt(window.getComputedStyle(document.querySelector(':root')).getPropertyValue('--navbar-height'), 10)
+    return <ul className='urlBarSuggestions' style={{
+      maxHeight: document.documentElement.offsetHeight - documentHeight - 2
+    }}>
       {items}
     </ul>
   }
@@ -156,6 +160,9 @@ class UrlBarSuggestions extends ImmutableComponent {
   }
 
   componentDidUpdate (prevProps) {
+    if (this.selectedElement) {
+      this.selectedElement.scrollIntoView()
+    }
     if (this.props.urlLocation === prevProps.urlLocation) {
       return
     }
@@ -215,6 +222,20 @@ class UrlBarSuggestions extends ImmutableComponent {
         }
       })
 
+    const sortBasedOnLocationPos = (s1, s2) => {
+      const pos1 = s1.get('location').indexOf(urlLocationLower)
+      const pos2 = s2.get('location').indexOf(urlLocationLower)
+      if (pos1 === -1 && pos2 === -1) {
+        return 0
+      } else if (pos1 === -1) {
+        return 1
+      } else if (pos2 === -1) {
+        return -1
+      } else {
+        return pos1 - pos2
+      }
+    }
+
     // opened frames
     if (getSetting(settings.OPENED_TAB_SUGGESTIONS)) {
       suggestions = suggestions.concat(mapListToElements({
@@ -223,6 +244,7 @@ class UrlBarSuggestions extends ImmutableComponent {
         type: suggestionTypes.TAB,
         clickHandler: (frameProps) =>
           windowActions.setActiveFrame(frameProps),
+        sortHandler: sortBasedOnLocationPos,
         formatTitle: (frame) => frame.get('title') || frame.get('location'),
         formatUrl: (frame) => frame.get('location'),
         filterValue: (frame) => !isSourceAboutUrl(frame.get('location')) &&
@@ -240,9 +262,7 @@ class UrlBarSuggestions extends ImmutableComponent {
         clickHandler: navigateClickHandler((site) => {
           return site.get('location')
         }),
-        sortHandler: (site1, site2) => {
-          return site2.get('tags').size - site1.get('tags').size
-        },
+        sortHandler: sortBasedOnLocationPos,
         formatTitle: (site) => site.get('title') || site.get('location'),
         formatUrl: (site) => site.get('location'),
         filterValue: (site) => {
@@ -264,9 +284,7 @@ class UrlBarSuggestions extends ImmutableComponent {
         clickHandler: navigateClickHandler((site) => {
           return site.get('location')
         }),
-        sortHandler: (site1, site2) => {
-          return site2.get('tags').size - site1.get('tags').size
-        },
+        sortHandler: sortBasedOnLocationPos,
         formatTitle: (site) => site.get('title') || site.get('location'),
         formatUrl: (site) => site.get('location'),
         filterValue: (site) => {

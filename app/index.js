@@ -45,6 +45,7 @@ const siteSettings = require('../js/state/siteSettings')
 const spellCheck = require('./spellCheck')
 const ledger = require('./ledger')
 const flash = require('./flash')
+const contentSettings = require('../js/state/contentSettings')
 
 // Used to collect the per window state when shutting down the application
 let perWindowState = []
@@ -195,6 +196,7 @@ loadAppStatePromise.then((initialState) => {
       return
     }
   }
+  app.setLocale(initialState.settings[settings.LANGUAGE])
 })
 
 app.on('ready', () => {
@@ -312,6 +314,13 @@ app.on('ready', () => {
     appActions.setState(Immutable.fromJS(initialState))
     return loadedPerWindowState
   }).then((loadedPerWindowState) => {
+    contentSettings.init()
+    Extensions.init()
+    Filtering.init()
+    SiteHacks.init()
+    NoScript.init()
+    spellCheck.init()
+
     // Wait for webcontents to be loaded before fetching data files
     ipcMain.once(messages.WEB_CONTENTS_INITIALIZED, () => {
       HttpsEverywhere.init()
@@ -400,11 +409,6 @@ app.on('ready', () => {
       debounce(initiateSessionStateSave, 5 * 60 * 1000)
     })
 
-    Extensions.init()
-    Filtering.init()
-    SiteHacks.init()
-    NoScript.init()
-    spellCheck.init()
     ledger.init()
 
     let masterKey
@@ -586,12 +590,6 @@ app.on('ready', () => {
         delete passwordCallbacks[message]
       }
       appActions.hideMessageBox(message)
-    })
-
-    ipcMain.on(messages.GOT_CANVAS_FINGERPRINTING, (e, details) => {
-      BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send(messages.GOT_CANVAS_FINGERPRINTING, details)
-      })
     })
 
     // Setup the crash handling

@@ -141,6 +141,10 @@ const createWindow = (browserOpts, defaults, frameOpts, windowState) => {
     mainWindow.maximize()
   }
 
+  if (windowState.ui && windowState.ui.isFullScreen) {
+    mainWindow.setFullScreen(true)
+  }
+
   mainWindow.on('resize', function (evt) {
     // the default window size is whatever the last window resize was
     appActions.setDefaultWindowSize(evt.sender.getSize())
@@ -211,9 +215,10 @@ class AppStore extends EventEmitter {
           wnd.webContents.send(messages.APP_STATE_CHANGE, { stateDiff: d.toJS() }))
         lastEmittedState = appState
       }
+      this.emit(CHANGE_EVENT, d.toJS())
+    } else {
+      this.emit(CHANGE_EVENT, [])
     }
-
-    this.emit(CHANGE_EVENT)
   }
 
   addChangeListener (callback) {
@@ -478,6 +483,6 @@ const handleAppAction = (action) => {
   emitChanges()
 }
 
-AppDispatcher.register(handleAppAction)
+appStore.dispatchToken = AppDispatcher.register(handleAppAction)
 
 module.exports = appStore
