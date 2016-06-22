@@ -82,7 +82,7 @@ class Frame extends ImmutableComponent {
 
   shouldCreateWebview () {
     return !this.webview || this.webview.allowRunningInsecureContent !== this.allowRunningInsecureContent() ||
-      this.webview.allowRunningPlugins !== this.allowRunningPlugins()
+      !!this.webview.allowRunningPlugins !== this.allowRunningPlugins()
   }
 
   allowRunningInsecureContent () {
@@ -92,7 +92,7 @@ class Frame extends ImmutableComponent {
 
   allowRunningPlugins () {
     let host = urlParse(this.props.frame.get('location')).host
-    return host && this.flashAllowedHosts[host]
+    return !!(host && this.flashAllowedHosts[host])
   }
 
   updateWebview (cb) {
@@ -467,7 +467,7 @@ class Frame extends ImmutableComponent {
       // Generate a random string that is unlikely to collide. Not
       // cryptographically random.
       const nonce = Math.random().toString()
-      if (this.props.flashInstalled) {
+      if (this.props.flashEnabled) {
         const parsedUrl = urlParse(this.props.frame.get('location'))
         const host = parsedUrl.host
         if (!host) {
@@ -495,6 +495,7 @@ class Frame extends ImmutableComponent {
           }
         }
       } else {
+        ipc.send(messages.SHOW_FLASH_INSTALLED_MESSAGE)
         windowActions.loadUrl(this.props.frame, url)
       }
       ipc.once(messages.NOTIFICATION_RESPONSE + nonce, (e, msg, buttonIndex) => {
