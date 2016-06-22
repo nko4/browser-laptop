@@ -43,7 +43,6 @@ const keytar = require('keytar')
 const settings = require('../js/constants/settings')
 const siteSettings = require('../js/state/siteSettings')
 const spellCheck = require('./spellCheck')
-const ledger = require('./ledger')
 const flash = require('./flash')
 const contentSettings = require('../js/state/contentSettings')
 
@@ -245,10 +244,6 @@ app.on('ready', () => {
       return
     }
 
-    // When the browser is closing we need to send a signal
-    // to record the currently active location in the ledger
-    ledger.handleLedgerVisit(null, 'NOOP')
-
     e.preventDefault()
 
     initiateSessionStateSave(true)
@@ -408,8 +403,6 @@ app.on('ready', () => {
       // and there's not much gained if saved more frequently since it's also saved on shutdown.
       debounce(initiateSessionStateSave, 5 * 60 * 1000)
     })
-
-    ledger.init()
 
     let masterKey
     ipcMain.on(messages.DELETE_PASSWORD, (e, password) => {

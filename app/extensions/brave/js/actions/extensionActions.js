@@ -9,19 +9,5 @@ var ExtensionActions = {
    */
   dispatchAction: function (action) {
     sendMessage({type: 'action', action}) // brave-default.js
-  },
-
-  /**
-   * sets the publisher for a url
-   *
-   * @param {string} location - The URL of the page
-   * @param {object} publisherInfo - The publisher identification data
-   */
-  setPagePublisher: function (location, publisherInfo) {
-    ExtensionActions.dispatchAction({
-      actionType: 'event-set-page-publisher',
-      location,
-      publisherInfo
-    })
   }
 }

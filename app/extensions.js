@@ -54,8 +54,7 @@ let generateBraveManifest = () => {
           'content/scripts/flashListener.js',
           'content/scripts/brave-default-end.js',
           'js/actions/extensionActions.js',
-          'content/scripts/themeColor.js',
-          'content/scripts/publisherIdentification.js'
+          'content/scripts/themeColor.js'
         ]
       },
       {

@@ -7,7 +7,6 @@ const React = require('react')
 const ImmutableComponent = require('../components/immutableComponent')
 const Immutable = require('immutable')
 const SwitchControl = require('../components/switchControl')
-const ModalOverlay = require('../components/modalOverlay')
 const cx = require('../lib/classSet.js')
 const { getZoomValuePercentage } = require('../lib/zoom')
 const config = require('../constants/config')
@@ -17,8 +16,6 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
-const tableSort = require('tablesort')
-const pad = require('underscore.string/pad')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -103,113 +100,6 @@ class SettingCheckbox extends ImmutableComponent {
         onClick={this.props.onChange ? this.props.onChange : changeSetting.bind(null, this.props.onChangeSetting, this.props.prefKey)}
         checkedOn={this.props.checked !== undefined ? this.props.checked : getSetting(this.props.prefKey, this.props.settings)} />
       <label data-l10n-id={this.props.dataL10nId} htmlFor={this.props.prefKey} />
-    </div>
-  }
-}
-
-class LedgerTableRow extends ImmutableComponent {
-  getFormattedTime () {
-    var d = this.props.daysSpent
-    var h = this.props.hoursSpent
-    var m = this.props.minutesSpent
-    var s = this.props.secondsSpent
-    if (d << 0 > 364) {
-      return '>1y'
-    }
-    d = (d << 0 === 0) ? '' : (d + 'd ')
-    h = (h << 0 === 0) ? '' : (h + 'h ')
-    m = (m << 0 === 0) ? '' : (m + 'm ')
-    s = (s << 0 === 0) ? '' : (s + 's ')
-    return (d + h + m + s + '')
-  }
-  padLeft (v) { return pad(v, 12, '0') }
-  render () {
-    var favicon = this.props.faviconURL ? <img src={this.props.faviconURL} alt={this.props.site} /> : null
-    return <tr>
-      <td data-sort={this.padLeft(this.props.rank)}>{this.props.rank}</td>
-      <td><a href={this.props.publisherURL}>{favicon}<span>{this.props.site}</span></a></td>
-      <td data-sort={this.padLeft(this.props.views)}>{this.props.views}</td>
-      <td data-sort={this.padLeft(this.props.duration)}>{this.getFormattedTime()}</td>
-      <td className='notImplemented'><input type='range' name='points' min='0' max='10'></input></td>
-      <td data-sort={this.padLeft(this.props.percentage)}>{this.props.percentage}</td>
-    </tr>
-  }
-}
-
-class LedgerTable extends ImmutableComponent {
-  componentDidMount (event) {
-    return tableSort(document.getElementById('ledgerTable'))
-  }
-  render () {
-    var rows = []
-    if (!this.props.data.synopsis) {
-      return false
-    }
-    for (let i = 0; i < this.props.data.synopsis.length; i++) {
-      rows[i] = <LedgerTableRow {...this.props.data.synopsis[i]} />
-    }
-    return <table id='ledgerTable' className='sort'>
-      <thead>
-        <tr>
-          <th className='sort-header' data-l10n-id='rank' />
-          <th className='sort-header' data-l10n-id='publisher' />
-          <th className='sort-header' data-l10n-id='views' />
-          <th className='sort-header' data-l10n-id='timeSpent' />
-          <th className='sort-header notImplemented' data-l10n-id='adjustment' />
-          <th className='sort-header'>&#37;</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows}
-      </tbody>
-    </table>
-  }
-}
-
-class BitcoinDashboard extends ImmutableComponent {
-  shouldComponentUpdate () { return true }
-  componentWillMount () {
-    this.setState({ shouldShowOverlay: false })
-  }
-  getOverlayContent () {
-    return <iframe src={this.props.buyURL} />
-  }
-  copyToClipboard (clipboard) {
-    console.log('Bitcoin Address: ' + clipboard)
-  }
-  goToURL (url) {
-    return window.open(url, '_blank')
-  }
-  hideOverlay (event) {
-    if (event.type === 'message' && (!event.data || !event.data.event || event.data.event !== 'modal_closed')) {
-      return false
-    }
-    this.setState({ shouldShowOverlay: false })
-  }
-  showOverlay (event) {
-    this.setState({ shouldShowOverlay: true })
-  }
-  render () {
-    var emptyDialog = true
-    window.addEventListener('message', this.hideOverlay.bind(this), false)
-    return <div id='bitcoinDashboard'>
-      <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} emptyDialog={emptyDialog} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
-      <div>{this.props.statusText}</div>
-      <div className='board'>
-        <div className='panel'>
-          <div className='settingsListTitle' data-l10n-id='bitcoinAdd' />
-          <a href={this.props.paymentURL} target='_blank'>
-            <img src={this.props.paymentIMG} alt={'Add Bitcoin'} />
-          </a>
-          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address || 'Not available')} />
-          <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
-        </div>
-        <div className='panel'>
-          <div className='settingsListTitle' data-l10n-id='moneyAdd' />
-          <div id='coinbaseLogo' />
-          <button data-l10n-id='add' onClick={this.showOverlay.bind(this)} />
-        </div>
-      </div>
     </div>
   }
 }
@@ -386,50 +276,6 @@ class ShieldsTab extends ImmutableComponent {
   }
 }
 
-class PaymentsTab extends ImmutableComponent {
-  shouldComponentUpdate () { return true }
-  componentWillMount () {
-    this.setState({ shouldShowOverlay: false })
-  }
-  getTableContent () {
-    return this.props.data.enabled ? <LedgerTable data={this.props.data} /> : <div className='pull-left' data-l10n-id='tableEmptyText' />
-  }
-  getButtonContent () {
-    return this.props.data.buttonLabel && this.props.data.buttonURL ? <a className='settingsListTitle pull-right' href={this.props.data.buttonURL}>{this.props.data.buttonLabel}</a> : null
-  }
-  getNotificationContent () {
-    return this.props.data.statusText ? <div className='notificationBar'>
-      <div className='pull-left'>{this.props.data.statusText}</div>
-    </div> : <div className='notificationBar'>
-      <div className='pull-left' data-l10n-id='notificationEmptyText' />
-    </div>
-  }
-  getOverlayContent () {
-    BitcoinDashboard.defaultProps = this.props.data
-    return <BitcoinDashboard />
-  }
-  hideOverlay (event) {
-    this.setState({ shouldShowOverlay: false })
-  }
-  showOverlay (event) {
-    this.setState({ shouldShowOverlay: true })
-  }
-  render () {
-    return this.props.data.enabled ? <div id='paymentsContainer'>
-      <ModalOverlay title={'addFunds'} content={this.getOverlayContent()} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
-      <div className='titleBar'>
-        <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
-        {this.getButtonContent()}
-        <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} />
-      </div>
-      {this.getNotificationContent()}
-      {this.getTableContent()}
-    </div> : <div className='emptyMessage' data-l10n-id='publisherEmptyText' />
-  }
-}
-PaymentsTab.propTypes = { data: React.PropTypes.array.isRequired }
-PaymentsTab.defaultProps = { data: [] }
-
 class SyncTab extends ImmutableComponent {
   render () {
     return <div id='syncContainer'>
@@ -532,11 +378,6 @@ class PreferenceNavigation extends ImmutableComponent {
         onClick={this.props.changeTab.bind(null, preferenceTabs.SHIELDS)}
         selected={this.props.preferenceTab === preferenceTabs.SHIELDS}
       />
-      <PreferenceNavigationButton icon='fa-bitcoin'
-        dataL10nId='publishers'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.PUBLISHERS)}
-        selected={this.props.preferenceTab === preferenceTabs.PUBLISHERS}
-      />
       <PreferenceNavigationButton icon='fa-refresh'
         dataL10nId='sync'
         onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
@@ -622,16 +463,12 @@ class AboutPreferences extends React.Component {
       languageCodes: window.languageCodes ? Immutable.fromJS(window.languageCodes) : Immutable.Map(),
       settings: window.initSettings ? Immutable.fromJS(window.initSettings) : Immutable.Map(),
       siteSettings: window.initSiteSettings ? Immutable.fromJS(window.initSiteSettings) : Immutable.Map(),
-      braveryDefaults: window.initBraveryDefaults ? Immutable.fromJS(window.initBraveryDefaults) : Immutable.Map(),
-      ledger: []
+      braveryDefaults: window.initBraveryDefaults ? Immutable.fromJS(window.initBraveryDefaults) : Immutable.Map()
     }
     window.addEventListener(messages.SETTINGS_UPDATED, (e) => {
       this.setState({
         settings: Immutable.fromJS(e.detail || {})
       })
-    })
-    window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      PaymentsTab.defaultProps.data = e.detail
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({
@@ -700,9 +537,6 @@ class AboutPreferences extends React.Component {
         break
       case preferenceTabs.SHIELDS:
         tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
-        break
-      case preferenceTabs.PUBLISHERS:
-        tab = <PaymentsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SYNC:
         tab = <SyncTab settings={settings} onChangeSetting={this.onChangeSetting} />

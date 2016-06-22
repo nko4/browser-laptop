@@ -11,8 +11,7 @@ const { isSourceAboutUrl } = require('../lib/appUrlUtil')
 
 let eventState = Immutable.fromJS({
   page_load: [],
-  page_view: [],
-  publisher_map: {}
+  page_view: []
 })
 
 const CHANGE_EVENT = 'change'
@@ -66,9 +65,6 @@ const doAction = (action) => {
       })
       eventState = eventState.set('page_view', eventState.get('page_view').push(pageViewEvent))
       lastActivePageUrl = action.frameProps.get('src')
-      break
-    case 'event-set-page-publisher':
-      eventState.set('publisher_map', eventState.get('publisher_map').set(action.location, action.publisherInfo))
       break
     default:
   }

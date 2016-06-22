@@ -55,9 +55,6 @@ const { isIntermediateAboutPage, getBaseUrl } = require('../lib/appUrlUtil')
 const siteSettings = require('../state/siteSettings')
 const urlParse = require('url').parse
 
-// Ledger
-const ledgerInterop = require('../ledgerInterop')
-
 class Main extends ImmutableComponent {
   constructor () {
     super()
@@ -852,7 +849,6 @@ class Main extends ImmutableComponent {
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}
-              ledger={ledgerInterop.generalCommunications()}
               enableFingerprintingProtection={this.enableFingerprintingProtection}
               block3rdPartyStorage={this.block3rdPartyStorage}
               frameSiteSettings={this.frameSiteSettings(frame.get('location'))}

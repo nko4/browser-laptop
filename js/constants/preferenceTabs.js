@@ -11,7 +11,6 @@ const preferenceTabs = {
   TABS: _,
   SECURITY: _,
   SHIELDS: _,
-  PUBLISHERS: _,
   SYNC: _,
   ADVANCED: _
 }
