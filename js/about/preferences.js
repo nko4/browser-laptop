@@ -376,10 +376,10 @@ class ShieldsTab extends ImmutableComponent {
         <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
         <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
         <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
+        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
       <SettingsList dataL10nId='advancedPrivacySettings'>
         <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
       <SitePermissionsPage siteSettings={this.props.siteSettings} />
     </div>
@@ -432,8 +432,28 @@ PaymentsTab.defaultProps = { data: [] }
 
 class SyncTab extends ImmutableComponent {
   render () {
-    return <div id='syncContainer'>
-      <div className='emptyMessage' data-l10n-id='syncEmptyText' />
+    return <div>
+      <SettingsList dataL10nId='passwordSettings'>
+        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <div classname='settingItem'>
+          <span className='linkText' data-l10n-id='managePasswords'
+            onClick={aboutActions.newFrame.bind(null, {
+              location: 'about:passwords'
+            }, true)}></span>
+        </div>
+      </SettingsList>
+      <SettingsList dataL10nId='pluginSettings'>
+        <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
+      </SettingsList>
+      <div className='subtext'>
+        <span className='fa fa-info-circle' id='flashInfoIcon' />
+        <span data-l10n-id='enableFlashSubtext' />
+        <span className='linkText'onClick={aboutActions.newFrame.bind(null, {
+          location: 'https://get.adobe.com/flashplayer'
+        })}>{'Adobe'}</span>.
+      </div>
     </div>
   }
 }
@@ -620,11 +640,13 @@ class AboutPreferences extends React.Component {
       preferenceTab: hash.toUpperCase() in preferenceTabs ? hash : preferenceTabs.GENERAL,
       hintNumber: this.getNextHintNumber(),
       languageCodes: window.languageCodes ? Immutable.fromJS(window.languageCodes) : Immutable.Map(),
+      flashInstalled: false,
       settings: window.initSettings ? Immutable.fromJS(window.initSettings) : Immutable.Map(),
       siteSettings: window.initSiteSettings ? Immutable.fromJS(window.initSiteSettings) : Immutable.Map(),
       braveryDefaults: window.initBraveryDefaults ? Immutable.fromJS(window.initBraveryDefaults) : Immutable.Map(),
       ledger: []
     }
+    aboutActions.checkFlashInstalled()
     window.addEventListener(messages.SETTINGS_UPDATED, (e) => {
       this.setState({
         settings: Immutable.fromJS(e.detail || {})
@@ -641,6 +663,11 @@ class AboutPreferences extends React.Component {
     window.addEventListener(messages.BRAVERY_DEFAULTS_UPDATED, (e) => {
       this.setState({
         braveryDefaults: Immutable.fromJS(e.detail || {})
+      })
+    })
+    window.addEventListener(messages.FLASH_UPDATED, (e) => {
+      this.setState({
+        flashInstalled: e.detail
       })
     })
     this.onChangeSetting = this.onChangeSetting.bind(this)
@@ -696,7 +723,7 @@ class AboutPreferences extends React.Component {
         tab = <TabsTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SECURITY:
-        tab = <SecurityTab settings={settings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
+        tab = <SecurityTab settings={settings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SHIELDS:
         tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />

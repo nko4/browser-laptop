@@ -14,6 +14,7 @@ var locale = require('./locale')
 const Immutable = require('immutable')
 const electron = require('electron')
 const BrowserWindow = electron.BrowserWindow
+const dialog = electron.dialog
 const ipcMain = electron.ipcMain
 const app = electron.app
 const Menu = require('./menu')
@@ -181,7 +182,7 @@ let loadAppStatePromise = SessionStore.loadAppState().catch(() => {
   return SessionStore.defaultAppState()
 })
 
-let flashInstalled = false
+let flashEnabled = false
 
 // Some settings must be set right away on startup, those settings should be handled here.
 loadAppStatePromise.then((initialState) => {
@@ -192,7 +193,7 @@ loadAppStatePromise.then((initialState) => {
   if (initialState.flash && initialState.flash.enabled === true) {
     if (flash.init()) {
       // Flash was initialized successfully
-      flashInstalled = true
+      flashEnabled = true
       return
     }
   }
@@ -274,6 +275,46 @@ app.on('ready', () => {
     }
   })
 
+  ipcMain.removeAllListeners('window-alert')
+  ipcMain.on('window-alert', function (event, message, title) {
+    var buttons
+    if (title == null) {
+      title = ''
+    }
+    buttons = ['OK']
+    message = message.toString()
+    dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+      message: message,
+      title: title,
+      buttons: buttons
+    })
+    // Alert should always return undefined.
+  })
+
+  ipcMain.removeAllListeners('window-confirm')
+  ipcMain.on('window-confirm', function (event, message, title) {
+    var buttons, cancelId
+    if (title == null) {
+      title = ''
+    }
+    buttons = ['OK', 'Cancel']
+    cancelId = 1
+    event.returnValue = !dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+      message: message,
+      title: title,
+      buttons: buttons,
+      cancelId: cancelId
+    })
+    return event.returnValue
+  })
+
+  ipcMain.removeAllListeners('window-prompt')
+  ipcMain.on('window-prompt', function (event, text, defaultText) {
+    console.warn('window.prompt is not supported yet')
+    event.returnValue = null
+    return event.returnValue
+  })
+
   ipcMain.on(messages.LOGIN_RESPONSE, (e, url, username, password) => {
     if (username || password) {
       // Having 2 of the same tab URLs open right now, where both require auth
@@ -310,7 +351,7 @@ app.on('ready', () => {
     // For tests we always want to load default app state
     const loadedPerWindowState = initialState.perWindowState
     delete initialState.perWindowState
-    initialState.flashInstalled = flashInstalled
+    initialState.flashEnabled = flashEnabled
     appActions.setState(Immutable.fromJS(initialState))
     return loadedPerWindowState
   }).then((loadedPerWindowState) => {
@@ -371,6 +412,21 @@ app.on('ready', () => {
 
     ipcMain.on(messages.SET_RESOURCE_ENABLED, (e, resourceName, enabled) => {
       appActions.setResourceEnabled(resourceName, enabled)
+    })
+
+    ipcMain.on(messages.CHECK_FLASH_INSTALLED, (e) => {
+      flash.checkFlashInstalled((installed) => {
+        e.sender.send(messages.FLASH_UPDATED, installed)
+      })
+    })
+
+    ipcMain.on(messages.SHOW_FLASH_INSTALLED_MESSAGE, (e) => {
+      flash.checkFlashInstalled((installed) => {
+        if (installed) {
+          BrowserWindow.getFocusedWindow().webContents.send(messages.SHOW_NOTIFICATION,
+                                                            locale.translation('flashInstalled'))
+        }
+      })
     })
 
     ipcMain.on(messages.MOVE_SITE, (e, sourceDetail, destinationDetail, prepend, destinationIsParent) => {

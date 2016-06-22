@@ -26,3 +26,19 @@ module.exports.init = () => {
     return false
   }
 }
+
+module.exports.checkFlashInstalled = (cb) => {
+  try {
+    const pepperFlashSystemPluginPath = app.getPath('pepperFlashSystemPlugin')
+    const pepperFlashManifestPath = path.resolve(pepperFlashSystemPluginPath, '..', 'manifest.json')
+    fs.readFile(pepperFlashManifestPath, (err, data) => {
+      if (err || !data) {
+        cb(false)
+      } else {
+        cb(true)
+      }
+    })
+  } catch (e) {
+    cb(false)
+  }
+}

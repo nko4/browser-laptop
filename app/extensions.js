@@ -52,7 +52,6 @@ let generateBraveManifest = () => {
           'content/scripts/adInsertion.js',
           'content/scripts/passwordManager.js',
           'content/scripts/flashListener.js',
-          'content/scripts/brave-default-end.js',
           'js/actions/extensionActions.js',
           'content/scripts/themeColor.js',
           'content/scripts/publisherIdentification.js'
@@ -82,10 +81,7 @@ let generateBraveManifest = () => {
     ],
     background: {
       scripts: [
-        'ext/immutable.min.js',
         'content/scripts/util.js',
-        'js/state/getSiteSettings.js',
-        'js/state/activeSettings.js',
         'brave-background.js'
       ]
     },
@@ -194,10 +190,10 @@ module.exports.init = () => {
     installExtension('brave', getExtensionsPath(), {manifest_location: 'component', manifest: generateBraveManifest()})
 
     if (getSetting(settings.ONE_PASSWORD_ENABLED)) {
-      installExtension('1password', getExtensionsPath())
-      enableExtension('1password')
+      installExtension('1Password', getExtensionsPath())
+      enableExtension('1Password')
     } else {
-      disableExtension('1password')
+      disableExtension('1Password')
     }
 
     if (getSetting(settings.DASHLANE_ENABLED)) {
