@@ -549,14 +549,15 @@ class Frame extends ImmutableComponent {
         this.webview.executeJavaScript('Navigator.prototype.__defineGetter__("doNotTrack", () => {return 1});')
       }
     }
-    const loadEnd = () => {
+    const loadEnd = (savePage) => {
       windowActions.onWebviewLoadEnd(
         this.props.frame,
         this.webview.getURL())
 
       const parsedUrl = urlParse(this.props.frame.get('location'))
       const protocol = parsedUrl.protocol
-      if (!this.props.frame.get('isPrivate') && (protocol === 'http:' || protocol === 'https:')) {
+      const isError = this.props.frame.getIn(['aboutDetails', 'errorCode'])
+      if (!this.props.frame.get('isPrivate') && this.props.frame.get('provisionalLocation') === this.props.frame.get('location') && (protocol === 'http:' || protocol === 'https:') && !isError && savePage) {
         // Register the site for recent history for navigation bar
         appActions.addSite(siteUtil.getDetailFromFrame(this.props.frame))
       }
@@ -591,6 +592,7 @@ class Frame extends ImmutableComponent {
           url: e.validatedURL
         })
         windowActions.loadUrl(this.props.frame, 'about:error')
+        appActions.removeSite(siteUtil.getDetailFromFrame(this.props.frame))
       }
     }
     this.webview.addEventListener('load-commit', (e) => {
@@ -621,22 +623,22 @@ class Frame extends ImmutableComponent {
     })
     this.webview.addEventListener('did-fail-provisional-load', (e) => {
       if (e.isMainFrame) {
-        loadEnd()
+        loadEnd(false)
         loadFail(e)
       }
     })
     this.webview.addEventListener('did-fail-load', (e) => {
       if (e.isMainFrame) {
-        loadEnd()
+        loadEnd(false)
         loadFail(e)
       }
     })
     this.webview.addEventListener('did-finish-load', () => {
-      loadEnd()
+      loadEnd(true)
     })
     this.webview.addEventListener('did-navigate-in-page', (e) => {
       windowActions.setNavigated(e.url, this.props.frame.get('key'), true)
-      loadEnd()
+      loadEnd(true)
     })
     this.webview.addEventListener('enter-html-full-screen', () => {
       windowActions.setFullScreen(this.props.frame, true, true)
