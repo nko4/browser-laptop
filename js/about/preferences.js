@@ -73,7 +73,7 @@ class SettingsList extends ImmutableComponent {
     return <div>
       {
         this.props.dataL10nId
-        ? <div className='settingsListTitle' data-l10n-id={this.props.dataL10nId} />
+        ? <span data-l10n-id={this.props.dataL10nId} />
         : null
       }
       <div className='settingsList'>
@@ -112,47 +112,51 @@ class GeneralTab extends ImmutableComponent {
       )
     })
     const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
-    return <SettingsList>
+    return <div>
+      <div className='settingsListTitle' data-l10n-id='generalSettings' />
       <SettingsList>
-        <SettingItem dataL10nId='selectedLanguage'>
-          <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
-            {languageOptions}
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='startsWith'>
-          <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
-            <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
-            <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
-            <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='myHomepage'>
-          <input data-l10n-id='homepageInput'
-            value={getSetting(settings.HOMEPAGE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
-        </SettingItem>
+        <SettingsList>
+          <SettingItem dataL10nId='selectedLanguage'>
+            <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
+              {languageOptions}
+            </select>
+          </SettingItem>
+          <SettingItem dataL10nId='startsWith'>
+            <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
+              <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
+              <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
+              <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
+            </select>
+          </SettingItem>
+          <SettingItem dataL10nId='myHomepage'>
+            <input data-l10n-id='homepageInput'
+              value={getSetting(settings.HOMEPAGE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
+          </SettingItem>
+        </SettingsList>
+        <SettingsList dataL10nId='bookmarkToolbarSettings'>
+          <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          <SettingCheckbox dataL10nId='bookmarkToolbarShowOnlyFavicon' style={{ visibility: (getSetting(settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON, this.props.settings) === true ? 'visible' : 'hidden') }} prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_ONLY_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        </SettingsList>
+        <SettingsList dataL10nId='appearanceSettings'>
+          <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          {
+            isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          }
+          <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        </SettingsList>
       </SettingsList>
-      <SettingsList dataL10nId='bookmarkToolbarSettings'>
-        <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarkToolbarShowOnlyFavicon' style={{ visibility: (getSetting(settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON, this.props.settings) === true ? 'visible' : 'hidden') }} prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_ONLY_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='appearanceSettings'>
-        <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        {
-          isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        }
-        <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-    </SettingsList>
+    </div>
   }
 }
 
 class SearchTab extends ImmutableComponent {
   render () {
     return <div>
+      <div className='settingsListTitle' data-l10n-id='searchSettings' />
       <SettingsList>
         <SettingItem dataL10nId='defaultSearchEngine'>
           <select value={getSetting(settings.DEFAULT_SEARCH_ENGINE, this.props.settings)}
@@ -174,23 +178,26 @@ class SearchTab extends ImmutableComponent {
 
 class TabsTab extends ImmutableComponent {
   render () {
-    return <SettingsList>
-      <SettingItem dataL10nId='tabsPerTabPage'>
-        <select
-          value={getSetting(settings.TABS_PER_PAGE, this.props.settings)}
-          data-type='number'
-          onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.TABS_PER_PAGE)}>
-          {
-            // Sorry, Brad says he hates primes :'(
-            [6, 8, 10, 20].map((x) =>
-              <option value={x} key={x}>{x}</option>)
-          }
-        </select>
-      </SettingItem>
-      <SettingCheckbox dataL10nId='switchToNewTabs' prefKey={settings.SWITCH_TO_NEW_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      <SettingCheckbox dataL10nId='paintTabs' prefKey={settings.PAINT_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      <SettingCheckbox dataL10nId='showTabPreviews' prefKey={settings.SHOW_TAB_PREVIEWS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-    </SettingsList>
+    return <div>
+      <div className='settingsListTitle' data-l10n-id='tabsSettings' />
+      <SettingsList>
+        <SettingItem dataL10nId='tabsPerTabPage'>
+          <select
+            value={getSetting(settings.TABS_PER_PAGE, this.props.settings)}
+            data-type='number'
+            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.TABS_PER_PAGE)}>
+            {
+              // Sorry, Brad says he hates primes :'(
+              [6, 8, 10, 20].map((x) =>
+                <option value={x} key={x}>{x}</option>)
+            }
+          </select>
+        </SettingItem>
+        <SettingCheckbox dataL10nId='switchToNewTabs' prefKey={settings.SWITCH_TO_NEW_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='paintTabs' prefKey={settings.PAINT_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='showTabPreviews' prefKey={settings.SHOW_TAB_PREVIEWS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+    </div>
   }
 }
 
@@ -200,7 +207,8 @@ class SecurityTab extends ImmutableComponent {
   }
   render () {
     return <div>
-      <SettingsList dataL10nId='passwordSettings'>
+      <div className='settingsListTitle' data-l10n-id='passwordSettings' />
+      <SettingsList>
         <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
@@ -249,7 +257,8 @@ class ShieldsTab extends ImmutableComponent {
   }
   render () {
     return <div id='shieldsContainer'>
-      <SettingsList dataL10nId='braveryDefaults'>
+      <div className='settingsListTitle' data-l10n-id='braveryDefaults' />
+      <SettingsList>
         <SettingItem dataL10nId='adControl'>
           <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
             <option data-l10n-id='showBraveAds' value='showBraveAds' />
@@ -308,7 +317,8 @@ class AdvancedTab extends ImmutableComponent {
   render () {
     const defaultZoomSetting = getSetting(settings.DEFAULT_ZOOM_LEVEL, this.props.settings)
     return <div>
-      <SettingsList dataL10nId='contentRenderingOptions'>
+      <div className='settingsListTitle' data-l10n-id='contentRenderingOptions' />
+      <SettingsList>
         <SettingItem dataL10nId='defaultZoomLevel'>
           <select
             value={defaultZoomSetting === undefined || defaultZoomSetting === null ? config.zoom.defaultValue : defaultZoomSetting}
@@ -400,6 +410,7 @@ class PreferenceNavigation extends ImmutableComponent {
       />
       <PreferenceNavigationButton icon='fa-refresh'
         dataL10nId='sync'
+        className='notImplemented'
         onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
         selected={this.props.preferenceTab === preferenceTabs.SYNC}
       />

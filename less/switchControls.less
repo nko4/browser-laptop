@@ -38,6 +38,10 @@
     }
   }
 
+  > label {
+    vertical-align: middle;
+  }
+
   .switchControlText {
     margin: auto 0;
   }
@@ -66,18 +70,19 @@
   .switchBackground {
     background-color: #777;
     border-radius: 12px;
-    height: 20px;
+    height: 16px;
     position: relative;
-    width: 45px;
+    width: 48px;
+    box-shadow: 0 1px 4px @lightGray;
 
     .switchIndicator {
       background-color: white;
       border-radius: 100%;
-      height: 16px;
+      height: 12px;
       left: 2px;
       position: absolute;
       top: 2px;
-      width: 16px;
+      width: 12px;
     }
   }
 }

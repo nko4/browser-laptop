@@ -6,7 +6,7 @@ strong, div, span, li, em, p, a {
 }
 
 .notImplemented {
-  display: none;
+  display: none !important; /* for testing/debug only */
 }
 
 .modal {
@@ -132,7 +132,14 @@ strong, div, span, li, em, p, a {
 
 .prefTabContainer {
   flex-grow: 1;
-  padding: 60px 30px 30px 30px;
+  padding: 40px;
+
+  > div > .settingsListTitle {
+    color: @braveOrange;
+    font-size: 1.125em;
+    margin-bottom: 1.25em;
+    margin-top: 0;
+  }
 }
 
 .prefAside {
@@ -142,7 +149,7 @@ strong, div, span, li, em, p, a {
   width: @sideBarWidth;
   height: 100%;
 
-  >div {
+  > div {
     display: block;
     width: 100%;
 
@@ -154,11 +161,13 @@ strong, div, span, li, em, p, a {
       font-size: 0.9em;
       font-weight: 300;
     }
+
     &:hover {
       .topBarButton.fa {
         background-color: @darkGray;
       }
     }
+
     .topBarButton.fa {
       display: flex;
       align-items: center;
@@ -244,11 +253,11 @@ strong, div, span, li, em, p, a {
     font-weight: normal;
     margin: 10px;
     * {
-      color: @white50;
+      color: white;
     }
   }
   > div {
-    color: @white50;
+    color: white;
     font-size: smaller;
     margin: 10px;
   }
@@ -256,14 +265,14 @@ strong, div, span, li, em, p, a {
     position: absolute;
     bottom: 0;
     a {
-      color: @white50;
+      color: white;
     }
     .loveToHear {
       color: initial;
       font-size: smaller;
       margin-top: 5px;
       margin-bottom: 30px;
-      color: @white50;
+      color: white;
     }
   }
   .hintsRefresh {
@@ -315,9 +324,11 @@ a {
 }
 
 .settingsListTitle,
-.settingsListLink {
-  color: black;
-  font-size: 1.2em;
+.settingsListLink,
+.settingsList .settingItem span {
+  color: @darkGray;
+  font-size: 1em;
+  margin: 3em 0 1.25em;
 }
 
 .settingsListLink {
@@ -337,15 +348,14 @@ a {
 
 .settingsList {
   margin-bottom: 10px;
-  width: 500px;
 
   .settingItem {
-    margin-bottom: 10px;
 
     > *:not(.switchControl) {
       margin-bottom: 10px;
       min-width: 160px;
       line-height: 2em;
+      vertical-align: middle;
     }
 
     .switchControl {
@@ -354,22 +364,21 @@ a {
 
     span {
       padding-right: 10px;
-      color: @braveOrange;
-      font-size: 1.25em;
     }
 
     label {
       text-align: left;
+      font-size: 0.95em;
     }
 
     > input,
     > select {
       display: block;
       border-radius: @borderRadius;
-      height: 3em;
+      height: 2.25em;
       font-size: 0.9em;
       padding: 10px;
-      margin: 10px;
+      margin: 10px 0;
       border: none;
       background: white;
       color: @darkGray;
