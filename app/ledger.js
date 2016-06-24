@@ -397,6 +397,7 @@ module.exports.handleLedgerVisit = (e, location) => {
         if (!publishers[publisher]) publishers[publisher] = []
         publishers[publisher].push({ when: underscore.now(), location: location })
 
+        publisherNormalizer()
         delete returnValue.publishers
       }
     } catch (ex) {
@@ -439,7 +440,6 @@ module.exports.handleLedgerVisit = (e, location) => {
       }
 
       syncWriter(synopsisPath, synopsis, () => {})
-
       delete returnValue.synopsis
     }
   }
