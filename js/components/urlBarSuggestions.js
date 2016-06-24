@@ -91,9 +91,9 @@ class UrlBarSuggestions extends ImmutableComponent {
     // We should show that as selected so the user knows what is being matched.
     const hasUrlSuffix = this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'urlSuffix']) || ''
 
-    const tabSuggestions = suggestions.filter((s) => s.type === suggestionTypes.TAB)
     const bookmarkSuggestions = suggestions.filter((s) => s.type === suggestionTypes.BOOKMARK)
     const historySuggestions = suggestions.filter((s) => s.type === suggestionTypes.HISTORY)
+    const tabSuggestions = suggestions.filter((s) => s.type === suggestionTypes.TAB)
     const searchSuggestions = suggestions.filter((s) => s.type === suggestionTypes.SEARCH)
     const topSiteSuggestions = suggestions.filter((s) => s.type === suggestionTypes.TOP_SITE)
 
@@ -102,7 +102,6 @@ class UrlBarSuggestions extends ImmutableComponent {
     const addToItems = (suggestions, sectionKey, title, icon) => {
       if (suggestions.size > 0) {
         items.push(<li className='suggestionSection'>
-          <span className='suggestionSectionTitle'>{title}</span>
           {
             icon
             ? <span className={cx({
@@ -113,6 +112,7 @@ class UrlBarSuggestions extends ImmutableComponent {
             })} />
             : null
           }
+          <span className='suggestionSectionTitle'>{title}</span>
         </li>)
       }
       items = items.concat(suggestions.map((suggestion, i) => {
@@ -121,7 +121,7 @@ class UrlBarSuggestions extends ImmutableComponent {
         return <li data-index={currentIndex + 1}
           onMouseOver={this.onMouseOver.bind(this)}
           onClick={suggestion.onClick}
-          key={suggestion.title}
+          key={suggestion.location}
           ref={(node) => { selected && (this.selectedElement = node) }}
           className={cx({
             selected,
@@ -129,7 +129,7 @@ class UrlBarSuggestions extends ImmutableComponent {
             [suggestion.type]: true
           })}>
           {
-            suggestion.type !== suggestionTypes.TOP_SITE
+            suggestion.type !== suggestionTypes.TOP_SITE && suggestion.title
             ? <div className='suggestionTitle'>{suggestion.title}</div>
             : null
           }
@@ -142,9 +142,9 @@ class UrlBarSuggestions extends ImmutableComponent {
       }))
       index += suggestions.size
     }
-    addToItems(tabSuggestions, 'tabsTitle', locale.translation('tabsSuggestionTitle'), 'fa-external-link')
     addToItems(bookmarkSuggestions, 'bookmarksTitle', locale.translation('bookmarksSuggestionTitle'), 'fa-star-o')
     addToItems(historySuggestions, 'historyTitle', locale.translation('historySuggestionTitle'), 'fa-clock-o')
+    addToItems(tabSuggestions, 'tabsTitle', locale.translation('tabsSuggestionTitle'), 'fa-external-link')
     addToItems(searchSuggestions, 'searchTitle', locale.translation('searchSuggestionTitle'), 'fa-search')
     addToItems(topSiteSuggestions, 'topSiteTitle', locale.translation('topSiteSuggestionTitle'), 'fa-link')
     const documentHeight = Number.parseInt(window.getComputedStyle(document.querySelector(':root')).getPropertyValue('--navbar-height'), 10)
@@ -163,7 +163,11 @@ class UrlBarSuggestions extends ImmutableComponent {
     if (this.selectedElement) {
       this.selectedElement.scrollIntoView()
     }
-    if (this.props.urlLocation === prevProps.urlLocation) {
+
+    // If both the URL is the same and the number of sites to consider is
+    // the same then we don't need to regenerate the suggestions list.
+    if (this.props.urlLocation === prevProps.urlLocation &&
+        this.props.sites.size === prevProps.sites.size) {
       return
     }
     this.suggestionList = this.getNewSuggestionList()
@@ -210,7 +214,9 @@ class UrlBarSuggestions extends ImmutableComponent {
       .filter(filterValue)
       // Filter out things which are already in the suggestions list
       .filter((site) =>
-        suggestions.findIndex((x) => x.title.toLowerCase() === (formatTitle(site) || '').toLowerCase()) === -1)
+        suggestions.findIndex((x) => (x.location || '').toLowerCase() === (formatUrl(site) || '').toLowerCase()) === -1 ||
+          // Tab autosuggestions should always be included since they will almost always be in history
+          type === suggestionTypes.TAB)
       .sort(sortHandler)
       .take(maxResults)
       .map((site) => {
@@ -232,25 +238,13 @@ class UrlBarSuggestions extends ImmutableComponent {
       } else if (pos2 === -1) {
         return -1
       } else {
-        return pos1 - pos2
+        if (pos1 - pos2 !== 0) {
+          return pos1 - pos2
+        } else {
+          // If there's a tie on the match location, use the shorter URL
+          return s1.get('location').length - s2.get('location').length
+        }
       }
-    }
-
-    // opened frames
-    if (getSetting(settings.OPENED_TAB_SUGGESTIONS)) {
-      suggestions = suggestions.concat(mapListToElements({
-        data: this.props.frames,
-        maxResults: config.urlBarSuggestions.maxOpenedFrames,
-        type: suggestionTypes.TAB,
-        clickHandler: (frameProps) =>
-          windowActions.setActiveFrame(frameProps),
-        sortHandler: sortBasedOnLocationPos,
-        formatTitle: (frame) => frame.get('title') || frame.get('location'),
-        formatUrl: (frame) => frame.get('location'),
-        filterValue: (frame) => !isSourceAboutUrl(frame.get('location')) &&
-          frame.get('key') !== this.props.activeFrameProps.get('key') &&
-          (frame.get('title') && frame.get('title').toLowerCase().includes(urlLocationLower) ||
-          frame.get('location') && frame.get('location').toLowerCase().includes(urlLocationLower))}))
     }
 
     // bookmarks
@@ -263,7 +257,7 @@ class UrlBarSuggestions extends ImmutableComponent {
           return site.get('location')
         }),
         sortHandler: sortBasedOnLocationPos,
-        formatTitle: (site) => site.get('title') || site.get('location'),
+        formatTitle: (site) => site.get('title'),
         formatUrl: (site) => site.get('location'),
         filterValue: (site) => {
           const title = site.get('title') || ''
@@ -285,7 +279,7 @@ class UrlBarSuggestions extends ImmutableComponent {
           return site.get('location')
         }),
         sortHandler: sortBasedOnLocationPos,
-        formatTitle: (site) => site.get('title') || site.get('location'),
+        formatTitle: (site) => site.get('title'),
         formatUrl: (site) => site.get('location'),
         filterValue: (site) => {
           const title = site.get('title') || ''
@@ -295,6 +289,23 @@ class UrlBarSuggestions extends ImmutableComponent {
             (!site.get('tags') || site.get('tags').size === 0)
         }
       }))
+    }
+
+    // opened frames
+    if (getSetting(settings.OPENED_TAB_SUGGESTIONS)) {
+      suggestions = suggestions.concat(mapListToElements({
+        data: this.props.frames,
+        maxResults: config.urlBarSuggestions.maxOpenedFrames,
+        type: suggestionTypes.TAB,
+        clickHandler: (frameProps) =>
+          windowActions.setActiveFrame(frameProps),
+        sortHandler: sortBasedOnLocationPos,
+        formatTitle: (frame) => frame.get('title'),
+        formatUrl: (frame) => frame.get('location'),
+        filterValue: (frame) => !isSourceAboutUrl(frame.get('location')) &&
+          frame.get('key') !== this.props.activeFrameProps.get('key') &&
+          (frame.get('title') && frame.get('title').toLowerCase().includes(urlLocationLower) ||
+          frame.get('location') && frame.get('location').toLowerCase().includes(urlLocationLower))}))
     }
 
     // Search suggestions

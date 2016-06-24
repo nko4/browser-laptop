@@ -95,7 +95,9 @@ module.exports.addSite = function (sites, siteDetail, tag, originalSiteDetail) {
     lastAccessedTime: siteDetail.get('lastAccessedTime') || new Date().getTime(),
     tags,
     location: siteDetail.get('location'),
-    title: siteDetail.get('title')
+    // We don't want bookmarks and other site info being renamed on users if they already exist
+    // The name should remain the same while it is bookmarked forever.
+    title: oldSite && tags.includes(siteTags.BOOKMARK) ? oldSite.get('title') : siteDetail.get('title')
   })
   if (folderId) {
     site = site.set('folderId', Number(folderId))
@@ -133,6 +135,12 @@ module.exports.removeSite = function (sites, siteDetail, tag) {
     return sites
   }
   const tags = sites.getIn([index, 'tags'])
+  // If there are no tags and the removeSite call was called without a specific tag
+  // then remove the entry completely.
+  if (tags.size === 0 && !tag) {
+    sites = sites.splice(index, 1)
+    return sites
+  }
   return sites.setIn([index, 'tags'], tags.toSet().remove(tag).toList())
 }
 

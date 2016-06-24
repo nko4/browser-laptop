@@ -7,6 +7,17 @@ const path = require('path')
 const UrlUtil = require('./urlutil')
 const config = require('../constants/config')
 
+function fileUrl (str) {
+  var pathName = path.resolve(str).replace(/\\/g, '/')
+
+  // Windows drive letter must be prefixed with a slash
+  if (pathName[0] !== '/') {
+    pathName = '/' + pathName
+  }
+
+  return encodeURI('file://' + pathName)
+}
+
 /**
  * Determines the path of a relative URL from the hosted app
  */
@@ -23,17 +34,17 @@ module.exports.getAppUrl = function (relativeUrl) {
   return url
 }
 
-module.exports.getExtensionsPath = function () {
+module.exports.getExtensionsPath = function (extensionDir) {
   return (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test')
     // the path is different for release builds because extensions are not in the asar file
-    ? path.join(__dirname, '..', '..', '..', 'extensions')
-    : path.join(__dirname, '..', '..', 'app', 'extensions')
+    ? path.join(__dirname, '..', '..', '..', 'extensions', extensionDir)
+    : path.join(__dirname, '..', '..', 'app', 'extensions', extensionDir)
 }
 
 module.exports.getIndexHTML = function () {
   return process.env.NODE_ENV === 'development'
-    ? 'file://' + path.resolve(__dirname, '..', '..') + '/app/extensions/brave/index-dev.html'
-    : 'file://' + path.resolve(__dirname, '..', '..') + '/app/extensions/brave/index.html'
+    ? fileUrl(path.resolve(__dirname, '..', '..') + '/app/extensions/brave/index-dev.html')
+    : fileUrl(path.resolve(__dirname, '..', '..') + '/app/extensions/brave/index.html')
 }
 
 /**
@@ -129,3 +140,5 @@ module.exports.getBaseUrl = getBaseUrl
 function getHash (input) {
   return (typeof input === 'string') ? input.split('#')[1] : ''
 }
+
+module.exports.navigatableTypes = ['http:', 'https:', 'about:', 'chrome:', 'chrome-extension:', 'file:', 'view-source:', 'ftp:']

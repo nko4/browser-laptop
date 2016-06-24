@@ -7,6 +7,7 @@ const urlParse = require('url').parse
 
 const ImmutableComponent = require('./immutableComponent')
 const windowActions = require('../actions/windowActions')
+const appActions = require('../actions/appActions')
 const KeyCodes = require('../constants/keyCodes')
 const cx = require('../lib/classSet.js')
 const ipc = global.require('electron').ipcRenderer
@@ -74,6 +75,10 @@ class UrlBar extends ImmutableComponent {
   }
 
   onKeyDown (e) {
+    if (!this.props.urlbar.get('active')) {
+      return
+    }
+
     switch (e.keyCode) {
       case KeyCodes.ENTER:
         windowActions.setUrlBarActive(false)
@@ -83,10 +88,7 @@ class UrlBar extends ImmutableComponent {
         let location = this.props.urlbar.get('location')
 
         // If a suffix is present then the user wants the first suggestion instead
-        if (this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'urlSuffix'])) {
-          location = this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'suggestionList', 0]).location
-        }
-
+        const urlSuffixInUse = this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'urlSuffix'])
         if (location === null || location.length === 0) {
           windowActions.setUrlBarSelected(true)
         } else {
@@ -97,7 +99,7 @@ class UrlBar extends ImmutableComponent {
           // For whitepsace we want a search no matter what.
           if (!isLocationUrl && !/\s/g.test(location) && e.ctrlKey) {
             windowActions.loadUrl(this.props.activeFrameProps, `www.${location}.com`)
-          } else if (this.shouldRenderUrlBarSuggestions && this.urlBarSuggestions.activeIndex > 0) {
+          } else if (this.shouldRenderUrlBarSuggestions && (this.urlBarSuggestions.activeIndex > 0 || urlSuffixInUse)) {
             // Hack to make alt enter open a new tab for url bar suggestions when hitting enter on them.
             const isDarwin = process.platform === 'darwin'
             if (e.altKey) {
@@ -144,6 +146,15 @@ class UrlBar extends ImmutableComponent {
       case KeyCodes.ESC:
         e.preventDefault()
         ipc.emit(messages.SHORTCUT_ACTIVE_FRAME_STOP)
+        break
+      case KeyCodes.DELETE:
+        if (e.shiftKey) {
+          const selectedIndex = this.locationValueSuffix.length > 0 ? 1 : this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'selectedIndex'])
+          if (selectedIndex !== undefined) {
+            const suggestionLocation = this.props.activeFrameProps.getIn(['navbar', 'urlbar', 'suggestions', 'suggestionList', selectedIndex - 1]).location
+            appActions.removeSite({ location: suggestionLocation })
+          }
+        }
         break
       case KeyCodes.BACKSPACE:
         // Temporarily disable the autocomplete when a user is pressing backspace.
