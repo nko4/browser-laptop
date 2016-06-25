@@ -471,7 +471,7 @@ var handleGeneralCommunication = (event) => {
     })
 
     returnValue.statusText = 'Publisher synopsis as of ' + moment(timestamp).fromNow() + ', reconcilation due ' +
-      moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'toNow' : 'fromNow']() + '.'
+      moment(returnValue._internal.reconcileStamp)[now < returnValue._internal.reconcileStamp ? 'fromNow' : 'toNow']() + '.'
   }
 
   result = underscore.omit(returnValue, '_internal')
