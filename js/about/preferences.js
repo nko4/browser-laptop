@@ -34,7 +34,6 @@ const hintCount = 3
 
 // Stylesheets
 
-require('../../less/switchControls.less')
 require('../../less/about/preferences.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
@@ -106,6 +105,12 @@ class SettingCheckbox extends ImmutableComponent {
 }
 
 class GeneralTab extends ImmutableComponent {
+  onSetDefaultButtonClick (event) {
+    console.log('set brave as default browser')
+  }
+  onDataImportButtonClick (event) {
+    console.log('import data to browser')
+  }
   render () {
     var languageOptions = this.props.languageCodes.map(function (lc) {
       return (
@@ -115,15 +120,9 @@ class GeneralTab extends ImmutableComponent {
     const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
     return <div>
       <div className='settingsListTitle' data-l10n-id='generalSettings' />
-      <SettingsList>
+      <div className='pull-left column'>
         <SettingsList>
-          <SettingItem dataL10nId='selectedLanguage'>
-            <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
-              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
-              {languageOptions}
-            </select>
-          </SettingItem>
-          <SettingItem dataL10nId='startsWith'>
+          <SettingItem dataL10nId='startsWithLabel'>
             <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
               onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
               <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
@@ -131,25 +130,64 @@ class GeneralTab extends ImmutableComponent {
               <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
             </select>
           </SettingItem>
-          <SettingItem dataL10nId='myHomepage'>
+          <SettingItem dataL10nId='newTabLabel'>
+            <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
+              <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
+              <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
+              <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
+            </select>
+          </SettingItem>
+          <SettingItem dataL10nId='homepageLabel'>
             <input data-l10n-id='homepageInput'
               value={getSetting(settings.HOMEPAGE, this.props.settings)}
               onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
           </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+          <SettingItem>
+            {
+              isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+            }
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
         </SettingsList>
-        <SettingsList dataL10nId='bookmarkToolbarSettings'>
-          <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          <SettingCheckbox dataL10nId='bookmarkToolbarShowOnlyFavicon' style={{ visibility: (getSetting(settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON, this.props.settings) === true ? 'visible' : 'hidden') }} prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_ONLY_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingsList>
+          <SettingItem dataL10nId='selectedLanguage'>
+            <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
+              {languageOptions}
+            </select>
+          </SettingItem>
         </SettingsList>
-        <SettingsList dataL10nId='appearanceSettings'>
-          <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          {
-            isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          }
-          <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </div>
+      <div className='pull-left column gutter'>
+        <SettingsList>
+          <SettingItem dataL10nId='setDefaultLabel'>
+            <span type='button' className='browserButton tactileButton' onClick={this.onSetDefaultButtonClick.bind(this)} data-l10n-id='setDefaultButton' />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='setDefaultAlwaysSwitch' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+          <SettingItem dataL10nId='importLabel'>
+            <span type='button' className='browserButton tactileButton' onClick={this.onDataImportButtonClick.bind(this)} data-l10n-id='importButton' />
+          </SettingItem>
         </SettingsList>
-      </SettingsList>
+        <SettingsList>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <div data-l10n-id='braveStaysUpdated' />
+          <SettingItem>
+            <SettingCheckbox dataL10nId='notifyOnUpdate' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+        </SettingsList>
+      </div>
     </div>
   }
 }
@@ -159,7 +197,7 @@ class SearchTab extends ImmutableComponent {
     return <div>
       <div className='settingsListTitle' data-l10n-id='searchSettings' />
       <SettingsList>
-        <SettingItem dataL10nId='defaultSearchEngine'>
+        <SettingItem>
           <select value={getSetting(settings.DEFAULT_SEARCH_ENGINE, this.props.settings)}
             onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_SEARCH_ENGINE)}>
             <option value='content/search/google.xml'>Google</option>
@@ -167,10 +205,11 @@ class SearchTab extends ImmutableComponent {
           </select>
         </SettingItem>
       </SettingsList>
-      <SettingsList dataL10nId='suggestionTypes'>
-        <SettingCheckbox dataL10nId='history' prefKey={settings.HISTORY_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarks' prefKey={settings.BOOKMARK_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='openedTabs' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      <div className='settingsListTitle' data-l10n-id='suggestionTypes' />
+      <SettingsList>
+        <SettingCheckbox dataL10nId='filterTab' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='filterHistory' prefKey={settings.HISTORY_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='filterBookmark' prefKey={settings.BOOKMARK_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='offerSearchSuggestions' prefKey={settings.OFFER_SEARCH_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
     </div>
@@ -525,19 +564,16 @@ class AboutPreferences extends React.Component {
     })
     this.onChangeSetting = this.onChangeSetting.bind(this)
   }
-
   changeTab (preferenceTab) {
     this.setState({
       preferenceTab
     })
   }
-
   refreshHint () {
     this.setState({
       hintNumber: this.getNextHintNumber()
     })
   }
-
   getNextHintNumber () {
     // Try for a new random number at most 10 times.
     // Avoiding the same tip twice is good because people may think the
@@ -551,14 +587,12 @@ class AboutPreferences extends React.Component {
     }
     return newNumber
   }
-
   onChangeSetting (key, value) {
     this.setState({
       settings: this.state.settings.set(key, value)
     })
     aboutActions.changeSetting(key, value)
   }
-
   render () {
     let tab
     const settings = this.state.settings

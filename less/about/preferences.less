@@ -92,20 +92,7 @@ strong, div, span, li, em, p, a {
   }
 
   button {
-    display: block;
-    min-width: 80px;
-    height: 3em;
-    vertical-align: middle;
-    text-align: center;
-    border: solid 1px @braveMediumOrange;
-    background: linear-gradient(to bottom, @braveOrange, @braveMediumOrange);
-    border-radius: @borderRadius;
-    color: white;
-    box-shadow: @lightBoxShadow;
-    font-size: 0.9em;
-    font-weight: 600;
-    cursor: pointer;
-    outline: none;
+    &:extend(.tactileButton);
 
     &.close {
       display: inline-block;
@@ -133,12 +120,31 @@ strong, div, span, li, em, p, a {
 .prefTabContainer {
   flex-grow: 1;
   padding: 40px;
+  min-width: 960px;
 
-  > div > .settingsListTitle {
-    color: @braveOrange;
-    font-size: 1.125em;
-    margin-bottom: 1.25em;
-    margin-top: 0;
+  > div {
+    > .column {
+      width: 400px;
+
+      &.gutter {
+        border-left: solid 1px #eee;
+        padding-left: 120px;
+      }
+      > div .settingsList {
+        margin: 4em 0 1em;
+      }
+      > div:first-of-type {
+        .settingsList {
+          margin: 1em 0;
+        }
+      }
+    }
+    > .settingsListTitle {
+      color: @braveOrange;
+      font-size: 1.125em;
+      margin-bottom: 1.25em;
+      margin-top: 0;
+    }
   }
 }
 
@@ -325,7 +331,7 @@ a {
 
 .settingsListTitle,
 .settingsListLink,
-.settingsList .settingItem span {
+.settingsList .settingItem span:not(.browserButton) {
   color: @darkGray;
   font-size: 1em;
   margin: 3em 0 1.25em;
@@ -347,14 +353,12 @@ a {
 }
 
 .settingsList {
-  margin-bottom: 10px;
 
   .settingItem {
 
     > *:not(.switchControl) {
       margin-bottom: 10px;
       min-width: 160px;
-      line-height: 2em;
       vertical-align: middle;
     }
 
@@ -362,8 +366,10 @@ a {
       min-width: 60px;
     }
 
-    span {
+    span:not(.browserButton) {
+      display: block;
       padding-right: 10px;
+      margin-top: 1em;
     }
 
     label {
