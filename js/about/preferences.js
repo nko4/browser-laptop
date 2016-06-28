@@ -6,7 +6,6 @@
 const React = require('react')
 const ImmutableComponent = require('../components/immutableComponent')
 const Immutable = require('immutable')
-const SwitchControl = require('../components/switchControl')
 const cx = require('../lib/classSet.js')
 const { getZoomValuePercentage } = require('../lib/zoom')
 const config = require('../constants/config')
@@ -16,7 +15,8 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
-const tableSort = require('tableSort')
+const SwitchControl = require('../components/switchControl')
+const SortableTable = require('../components/sortableTable')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -105,43 +105,6 @@ class SettingCheckbox extends ImmutableComponent {
   }
 }
 
-class SortableTableRow extends ImmutableComponent {
-  render () {
-    return <tr>
-      <td>{(this.props.isDefault ? 'x' : '')}</td>
-      <td data-sort={this.props.engine}>{this.props.engine}</td>
-      <td data-sort={this.props.goKey}>{this.props.goKey}</td>
-    </tr>
-  }
-}
-
-class SortableTable extends ImmutableComponent {
-  componentDidMount (event) {
-    return tableSort(document.getElementsByClassName('sortableTable')[0])
-  }
-  render () {
-    var rows = []
-    if (!this.props.data) {
-      return false
-    }
-    for (let i = 0; i < this.props.data.length; i++) {
-      rows[i] = <SortableTableRow {...this.props.data[i]} />
-    }
-    return <table className='sortableTable sort'>
-      <thead>
-        <tr>
-          <th className='sort-header' data-l10n-id='default' />
-          <th className='sort-header' data-l10n-id='searchEngines' />
-          <th className='sort-header' data-l10n-id='engineGoKey' />
-        </tr>
-      </thead>
-      <tbody>
-        {rows}
-      </tbody>
-    </table>
-  }
-}
-
 class GeneralTab extends ImmutableComponent {
   onSetDefaultButtonClick (event) {
     console.log('set brave as default browser')
@@ -156,6 +119,7 @@ class GeneralTab extends ImmutableComponent {
       )
     })
     const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
+    console.log(this.props)
     return <div>
       <div className='settingsListTitle' data-l10n-id='generalSettings' />
       <div className='pull-left column'>
@@ -220,8 +184,7 @@ class GeneralTab extends ImmutableComponent {
           </SettingItem>
         </SettingsList>
         <SettingsList>
-          <div data-l10n-id='braveStaysUpdated' />
-          <SettingItem>
+          <SettingItem dataL10nId='braveStaysUpdated'>
             <SettingCheckbox dataL10nId='notifyOnUpdate' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
           </SettingItem>
         </SettingsList>
@@ -234,7 +197,7 @@ class SearchTab extends ImmutableComponent {
   render () {
     return <div>
       <div className='settingsListTitle' data-l10n-id='searchSettings' />
-      <SortableTable data={this.props.engines} />
+      <SortableTable headings={this.props.table.headings} rows={this.props.table.rows} />
       <div className='settingsListTitle' data-l10n-id='suggestionTypes' />
       <SettingsList>
         <SettingCheckbox dataL10nId='filterTab' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
@@ -246,16 +209,19 @@ class SearchTab extends ImmutableComponent {
   }
 }
 SearchTab.defaultProps = {
-  engines: [
-    { isDefault: false, engine: 'Amazon', goKey: '/G' },
-    { isDefault: false, engine: 'Bing', goKey: '/D' },
-    { isDefault: false, engine: 'Duck Duck Go', goKey: '/Y' },
-    { isDefault: false, engine: 'Google', goKey: '/B' },
-    { isDefault: false, engine: 'Twitter', goKey: '/T' },
-    { isDefault: false, engine: 'Wikipedia', goKey: '/W' },
-    { isDefault: false, engine: 'Yahoo', goKey: '/A' },
-    { isDefault: false, engine: 'YouTube', goKey: '/YT' }
-  ]
+  table: {
+    headings: ['default', 'searchEngines', 'engineGoKey'],
+    rows: [
+      [false, 'Amazon', '/G'],
+      [false, 'Bing', '/D'],
+      [false, 'Duck Duck Go', '/Y'],
+      [true, 'Google', '/B'],
+      [false, 'Twitter', '/T'],
+      [false, 'Wikipedia', '/W'],
+      [false, 'Yahoo', '/A'],
+      [false, 'YouTube', '/YT']
+    ]
+  }
 }
 
 class TabsTab extends ImmutableComponent {
@@ -340,29 +306,35 @@ class ShieldsTab extends ImmutableComponent {
   render () {
     return <div id='shieldsContainer'>
       <div className='settingsListTitle' data-l10n-id='braveryDefaults' />
-      <SettingsList>
-        <SettingItem dataL10nId='adControl'>
-          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
-            <option data-l10n-id='showBraveAds' value='showBraveAds' />
-            <option data-l10n-id='blockAds' value='blockAds' />
-            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='cookieControl'>
-          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
-            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
-            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
-          </select>
-        </SettingItem>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
-        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='advancedPrivacySettings'>
-        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
+      <div className='pull-left column'>
+        <SettingsList>
+          <SettingItem dataL10nId='adControl'>
+            <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
+              <option data-l10n-id='showBraveAds' value='showBraveAds' />
+              <option data-l10n-id='blockAds' value='blockAds' />
+              <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
+            </select>
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
+          <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
+          <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
+          <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        </SettingsList>
+        <SitePermissionsPage siteSettings={this.props.siteSettings} />
+      </div>
+      <div className='pull-left column gutter'>
+        <SettingsList>
+          <SettingItem dataL10nId='cookieControl'>
+            <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
+              <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
+              <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
+            </select>
+          </SettingItem>
+        </SettingsList>
+      </div>
     </div>
   }
 }
