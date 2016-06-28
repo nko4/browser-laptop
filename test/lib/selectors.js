@@ -28,5 +28,12 @@ module.exports = {
   findBarMatchCase: '#caseSensitivityCheckbox',
   findBarNextButton: '.findButton.findNext',
   findBarPrevButton: '.findButton.findPrev',
-  findBarHideButton: '.findButton.hideButton'
+  braveMenu: '.braveMenu:not(.braveShieldsDisabled)',
+  braveMenuDisabled: '.braveMenu.braveShieldsDisabled',
+  adsBlockedStat: '.braveryStat.adsBlockedStat',
+  braveryPanel: '.braveryPanel',
+  httpsEverywhereStat: '.braveryStat.redirectedResourcesStat',
+  noScriptStat: '.braveryStat.noScriptStat',
+  noScriptSwitch: '.noScriptSwitch .switchMiddle',
+  noScriptNavButton: '#navigator .noScript'
 }
