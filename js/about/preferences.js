@@ -317,11 +317,12 @@ class ShieldsTab extends ImmutableComponent {
           </SettingItem>
         </SettingsList>
         <SettingsList>
-          <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
-          <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
-          <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
-          <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
         </SettingsList>
         <SitePermissionsPage siteSettings={this.props.siteSettings} />
       </div>
@@ -332,6 +333,17 @@ class ShieldsTab extends ImmutableComponent {
               <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
               <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
             </select>
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
           </SettingItem>
         </SettingsList>
       </div>
