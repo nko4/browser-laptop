@@ -16,6 +16,7 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
+const tableSort = require('tableSort')
 
 const adblock = appConfig.resourceNames.ADBLOCK
 const cookieblock = appConfig.resourceNames.COOKIEBLOCK
@@ -101,6 +102,43 @@ class SettingCheckbox extends ImmutableComponent {
         checkedOn={this.props.checked !== undefined ? this.props.checked : getSetting(this.props.prefKey, this.props.settings)} />
       <label data-l10n-id={this.props.dataL10nId} htmlFor={this.props.prefKey} />
     </div>
+  }
+}
+
+class SortableTableRow extends ImmutableComponent {
+  render () {
+    return <tr>
+      <td>{(this.props.isDefault ? 'x' : '')}</td>
+      <td data-sort={this.props.engine}>{this.props.engine}</td>
+      <td data-sort={this.props.goKey}>{this.props.goKey}</td>
+    </tr>
+  }
+}
+
+class SortableTable extends ImmutableComponent {
+  componentDidMount (event) {
+    return tableSort(document.getElementsByClassName('sortableTable')[0])
+  }
+  render () {
+    var rows = []
+    if (!this.props.data) {
+      return false
+    }
+    for (let i = 0; i < this.props.data.length; i++) {
+      rows[i] = <SortableTableRow {...this.props.data[i]} />
+    }
+    return <table className='sortableTable sort'>
+      <thead>
+        <tr>
+          <th className='sort-header' data-l10n-id='default' />
+          <th className='sort-header' data-l10n-id='searchEngines' />
+          <th className='sort-header' data-l10n-id='engineGoKey' />
+        </tr>
+      </thead>
+      <tbody>
+        {rows}
+      </tbody>
+    </table>
   }
 }
 
@@ -196,15 +234,7 @@ class SearchTab extends ImmutableComponent {
   render () {
     return <div>
       <div className='settingsListTitle' data-l10n-id='searchSettings' />
-      <SettingsList>
-        <SettingItem>
-          <select value={getSetting(settings.DEFAULT_SEARCH_ENGINE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_SEARCH_ENGINE)}>
-            <option value='content/search/google.xml'>Google</option>
-            <option value='content/search/duckduckgo.xml'>DuckDuckGo</option>
-          </select>
-        </SettingItem>
-      </SettingsList>
+      <SortableTable data={this.props.engines} />
       <div className='settingsListTitle' data-l10n-id='suggestionTypes' />
       <SettingsList>
         <SettingCheckbox dataL10nId='filterTab' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
@@ -214,6 +244,18 @@ class SearchTab extends ImmutableComponent {
       </SettingsList>
     </div>
   }
+}
+SearchTab.defaultProps = {
+  engines: [
+    { isDefault: false, engine: 'Amazon', goKey: '/G' },
+    { isDefault: false, engine: 'Bing', goKey: '/D' },
+    { isDefault: false, engine: 'Duck Duck Go', goKey: '/Y' },
+    { isDefault: false, engine: 'Google', goKey: '/B' },
+    { isDefault: false, engine: 'Twitter', goKey: '/T' },
+    { isDefault: false, engine: 'Wikipedia', goKey: '/W' },
+    { isDefault: false, engine: 'Yahoo', goKey: '/A' },
+    { isDefault: false, engine: 'YouTube', goKey: '/YT' }
+  ]
 }
 
 class TabsTab extends ImmutableComponent {

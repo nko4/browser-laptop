@@ -127,7 +127,7 @@ strong, div, span, li, em, p, a {
       width: 400px;
 
       &.gutter {
-        border-left: solid 1px #eee;
+        border-left: solid 1px @lightGray;
         padding-left: 120px;
       }
       > div .settingsList {
@@ -453,8 +453,71 @@ input[type="checkbox"][disabled] {
   padding: 3px;
 }
 
-#shieldsContainer {
+table.sortableTable {
+  width: 100%;
+  border: solid 1px @lightGray;
+  border-radius: @borderRadius;
+  margin-bottom: 40px;
 
+  tr {
+    height: 1.7em;
+    padding: 5px 20px;
+
+    th {
+      background: @lightGray;
+      color: @darkGray;
+      cursor: pointer;
+      text-align: left;
+      font-weight: 600;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    td {
+      color: @mediumGray;
+      -webkit-font-smoothing: antialiased;
+      width: auto;
+
+      &:not(:first-of-type) {
+        border-bottom: solid 1px @lightGray;
+      }
+
+      &:nth-of-type(1) {
+        width: 60px;
+      }
+
+      &:nth-of-type(2) {
+        width: 60%;
+      }
+
+      input[type='range'] {
+        background: transparent;
+        -webkit-appearance: none;
+        width: 90%;
+        margin: 0 0 0 20%;
+        outline: none;
+
+        &::-webkit-slider-runnable-track {
+          -webkit-appearance: none;
+          background: @gray25;
+          border-radius: 1000px;
+          height: 1em;
+        }
+
+        &::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          background: linear-gradient(to bottom, @braveOrange, @braveDarkOrange);
+          width: 1em;
+          height: 1em;
+          border-radius: 50%;
+          box-shadow: 0 0 6px @black25;
+          cursor: pointer;
+        }
+      }
+    }
+  }
 }
 
 .emptyMessage {
