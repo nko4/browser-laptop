@@ -27,7 +27,7 @@ const locale = require('../js/l10n')
 const getSetting = require('./settings').getSetting
 const settings = require('./constants/settings')
 const textUtils = require('./lib/text')
-const {isUrl} = require('./lib/appUrlUtil')
+const {isIntermediateAboutPage, isUrl} = require('./lib/appUrlUtil')
 
 const isDarwin = process.platform === 'darwin'
 
@@ -358,14 +358,15 @@ function tabTemplateInit (frameProps) {
 
   if (!frameProps.get('isPrivate')) {
     const isPinned = frameProps.get('pinnedLocation')
-
-    items.push({
-      label: locale.translation(isPinned ? 'unpinTab' : 'pinTab'),
-      click: (item) => {
-        // Handle converting the current tab window into a pinned site
-        windowActions.setPinned(frameProps, !isPinned)
-      }
-    })
+    var location = frameProps.get('location');
+    if (!(location === 'about:blank' || location == 'about:newtab' || isIntermediateAboutPage(location)))
+      items.push({
+        label: locale.translation(isPinned ? 'unpinTab' : 'pinTab'),
+        click: (item) => {
+          // Handle converting the current tab window into a pinned site
+          windowActions.setPinned(frameProps, !isPinned)
+        }
+      })
   }
 
   // items.push({
@@ -649,7 +650,7 @@ const copyEmailAddressMenuItem = (location) => {
 }
 
 const searchSelectionMenuItem = (location) => {
-  var searchText = textUtils.ellipse(location, 3)
+  var searchText = textUtils.ellipse(location)
   return {
     label: locale.translation('openSearch').replace(/{{\s*selectedVariable\s*}}/, searchText),
     click: (item, focusedWindow) => {
@@ -657,6 +658,16 @@ const searchSelectionMenuItem = (location) => {
         let searchUrl = windowStore.getState().getIn(['searchDetail', 'searchURL']).replace('{searchTerms}', encodeURIComponent(location))
         windowActions.newFrame({ location: searchUrl }, true)
       }
+    }
+  }
+}
+
+const showDefinitionMenuItem = (selectionText) => {
+  let lookupText = textUtils.ellipse(selectionText, 3)
+  return {
+    label: locale.translation('lookupSelection').replace(/{{\s*selectedVariable\s*}}/, lookupText),
+    click: (item, focusedWindow) => {
+      webviewActions.showDefinitionForSelection()
     }
   }
 }
@@ -732,6 +743,11 @@ function mainTemplateInit (nodeProps, frame) {
       role: 'redo'
     }, CommonMenu.separatorMenuItem, ...editableItems, CommonMenu.separatorMenuItem)
   } else if (nodeProps.selectionText.length > 0) {
+    if (isDarwin) {
+      template.push(showDefinitionMenuItem(nodeProps.selectionText),
+        CommonMenu.separatorMenuItem
+      )
+    }
     template.push(searchSelectionMenuItem(nodeProps.selectionText), {
       label: locale.translation('copy'),
       accelerator: 'CmdOrCtrl+C',
