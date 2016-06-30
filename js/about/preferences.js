@@ -6,8 +6,6 @@
 const React = require('react')
 const ImmutableComponent = require('../components/immutableComponent')
 const Immutable = require('immutable')
-const SwitchControl = require('../components/switchControl')
-const ModalOverlay = require('../components/modalOverlay')
 const cx = require('../lib/classSet.js')
 const { getZoomValuePercentage } = require('../lib/zoom')
 const config = require('../constants/config')
@@ -17,6 +15,9 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
+const ModalOverlay = require('../components/modalOverlay')
+const SwitchControl = require('../components/switchControl')
+const SortableTable = require('../components/sortableTable')
 const tableSort = require('tablesort')
 const pad = require('underscore.string/pad')
 
@@ -37,7 +38,6 @@ const hintCount = 3
 
 // Stylesheets
 
-require('../../less/switchControls.less')
 require('../../less/about/preferences.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
@@ -77,7 +77,7 @@ class SettingsList extends ImmutableComponent {
     return <div>
       {
         this.props.dataL10nId
-        ? <div className='settingsListTitle' data-l10n-id={this.props.dataL10nId} />
+        ? <span data-l10n-id={this.props.dataL10nId} />
         : null
       }
       <div className='settingsList'>
@@ -90,7 +90,7 @@ class SettingsList extends ImmutableComponent {
 class SettingItem extends ImmutableComponent {
   render () {
     return <div className='settingItem'>
-      <span data-l10n-id={this.props.dataL10nId} />
+      {this.props.dataL10nId ? <span data-l10n-id={this.props.dataL10nId} /> : null}
       {this.props.children}
     </div>
   }
@@ -216,92 +216,143 @@ class BitcoinDashboard extends ImmutableComponent {
 }
 
 class GeneralTab extends ImmutableComponent {
+  onSetDefaultButtonClick (event) {
+    console.log('set brave as default browser')
+  }
+  onDataImportButtonClick (event) {
+    console.log('import data to browser')
+  }
   render () {
     var languageOptions = this.props.languageCodes.map(function (lc) {
-      return (
-        <option data-l10n-id={lc} value={lc} />
-      )
+      return (<option data-l10n-id={lc} value={lc} />)
     })
+    var bookmarkOptions = <option data-l10n-id={'Text and Favicons'} value={'Text and Favicons'} />
     const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
-    return <SettingsList>
-      <SettingsList>
-        <SettingItem dataL10nId='selectedLanguage'>
-          <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
-            {languageOptions}
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='startsWith'>
-          <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
-            <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
-            <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
-            <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='myHomepage'>
-          <input data-l10n-id='homepageInput'
-            value={getSetting(settings.HOMEPAGE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
-        </SettingItem>
-      </SettingsList>
-      <SettingsList dataL10nId='bookmarkToolbarSettings'>
-        <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarkToolbarShowOnlyFavicon' style={{ visibility: (getSetting(settings.SHOW_BOOKMARKS_TOOLBAR_FAVICON, this.props.settings) === true ? 'visible' : 'hidden') }} prefKey={settings.SHOW_BOOKMARKS_TOOLBAR_ONLY_FAVICON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='appearanceSettings'>
-        <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        {
-          isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        }
-        <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-    </SettingsList>
+    return <div>
+      <div className='settingsListTitle' data-l10n-id='generalSettings' />
+      <div className='pull-left column'>
+        <SettingsList>
+          <SettingItem dataL10nId='startsWithLabel'>
+            <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
+              <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
+              <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
+              <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
+            </select>
+          </SettingItem>
+          <SettingItem dataL10nId='newTabLabel'>
+            <select value={getSetting(settings.STARTUP_MODE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.STARTUP_MODE)} >
+              <option data-l10n-id='startsWithOptionLastTime' value='lastTime' />
+              <option data-l10n-id='startsWithOptionHomePage' value='homePage' />
+              <option data-l10n-id='startsWithOptionNewTabPage' value='newTabPage' />
+            </select>
+          </SettingItem>
+          <SettingItem dataL10nId='homepageLabel'>
+            <input data-l10n-id='homepageInput'
+              value={getSetting(settings.HOMEPAGE, this.props.settings)}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+          {isDarwin ? null : <SettingItem><SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} /></SettingItem>}
+          <SettingItem>
+            <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem dataL10nId='bookmarkToolbarSettings'>
+            <select value={getSetting(settings.SHOW_BOOKMARKS_TOOLBAR, this.props.settings) || defaultLanguage}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.SHOW_BOOKMARKS_TOOLBAR)} >
+              {bookmarkOptions}
+            </select>
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem dataL10nId='selectedLanguage'>
+            <select value={getSetting(settings.LANGUAGE, this.props.settings) || defaultLanguage}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.LANGUAGE)} >
+              {languageOptions}
+            </select>
+          </SettingItem>
+        </SettingsList>
+      </div>
+      <div className='pull-left column gutter'>
+        <SettingsList>
+          <SettingItem dataL10nId='setDefaultLabel'>
+            <span type='button' className='browserButton tactileButton' onClick={this.onSetDefaultButtonClick.bind(this)} data-l10n-id='setDefaultButton' />
+          </SettingItem>
+          <SettingCheckbox dataL10nId='setDefaultAlwaysSwitch' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          <SettingItem dataL10nId='importLabel'>
+            <span type='button' className='browserButton tactileButton' onClick={this.onDataImportButtonClick.bind(this)} data-l10n-id='importButton' />
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        </SettingsList>
+        <SettingsList>
+          <em data-l10n-id='braveStaysUpdated' />
+          <SettingCheckbox dataL10nId='notifyOnUpdate' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        </SettingsList>
+      </div>
+    </div>
   }
 }
 
 class SearchTab extends ImmutableComponent {
   render () {
     return <div>
+      <div className='settingsListTitle' data-l10n-id='searchSettings' />
+      <SortableTable headings={this.props.table.headings} rows={this.props.table.rows} />
+      <div className='settingsListTitle' data-l10n-id='suggestionTypes' />
       <SettingsList>
-        <SettingItem dataL10nId='defaultSearchEngine'>
-          <select value={getSetting(settings.DEFAULT_SEARCH_ENGINE, this.props.settings)}
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_SEARCH_ENGINE)}>
-            <option value='content/search/google.xml'>Google</option>
-            <option value='content/search/duckduckgo.xml'>DuckDuckGo</option>
-          </select>
-        </SettingItem>
-      </SettingsList>
-      <SettingsList dataL10nId='suggestionTypes'>
-        <SettingCheckbox dataL10nId='history' prefKey={settings.HISTORY_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='bookmarks' prefKey={settings.BOOKMARK_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='openedTabs' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='filterTab' prefKey={settings.OPENED_TAB_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='filterHistory' prefKey={settings.HISTORY_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='filterBookmark' prefKey={settings.BOOKMARK_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='offerSearchSuggestions' prefKey={settings.OFFER_SEARCH_SUGGESTIONS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
     </div>
   }
 }
+SearchTab.defaultProps = {
+  table: {
+    headings: ['default', 'searchEngines', 'engineGoKey'],
+    rows: [
+      [false, 'Amazon', '/G'],
+      [false, 'Bing', '/D'],
+      [false, 'Duck Duck Go', '/Y'],
+      [true, 'Google', '/B'],
+      [false, 'Twitter', '/T'],
+      [false, 'Wikipedia', '/W'],
+      [false, 'Yahoo', '/A'],
+      [false, 'YouTube', '/YT']
+    ]
+  }
+}
 
 class TabsTab extends ImmutableComponent {
   render () {
-    return <SettingsList>
-      <SettingItem dataL10nId='tabsPerTabPage'>
-        <select
-          value={getSetting(settings.TABS_PER_PAGE, this.props.settings)}
-          data-type='number'
-          onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.TABS_PER_PAGE)}>
-          {
-            // Sorry, Brad says he hates primes :'(
-            [6, 8, 10, 20].map((x) =>
-              <option value={x} key={x}>{x}</option>)
-          }
-        </select>
-      </SettingItem>
-      <SettingCheckbox dataL10nId='switchToNewTabs' prefKey={settings.SWITCH_TO_NEW_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      <SettingCheckbox dataL10nId='paintTabs' prefKey={settings.PAINT_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      <SettingCheckbox dataL10nId='showTabPreviews' prefKey={settings.SHOW_TAB_PREVIEWS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-    </SettingsList>
+    return <div>
+      <div className='settingsListTitle' data-l10n-id='tabsSettings' />
+      <SettingsList>
+        <SettingItem dataL10nId='tabsPerTabPage'>
+          <select
+            value={getSetting(settings.TABS_PER_PAGE, this.props.settings)}
+            data-type='number'
+            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.TABS_PER_PAGE)}>
+            {
+              // Sorry, Brad says he hates primes :'(
+              [6, 8, 10, 20].map((x) =>
+                <option value={x} key={x}>{x}</option>)
+            }
+          </select>
+        </SettingItem>
+        <SettingCheckbox dataL10nId='switchToNewTabs' prefKey={settings.SWITCH_TO_NEW_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='paintTabs' prefKey={settings.PAINT_TABS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='showTabPreviews' prefKey={settings.SHOW_TAB_PREVIEWS} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+    </div>
   }
 }
 
@@ -311,7 +362,8 @@ class SecurityTab extends ImmutableComponent {
   }
   render () {
     return <div>
-      <SettingsList dataL10nId='passwordSettings'>
+      <div className='settingsListTitle' data-l10n-id='passwordSettings' />
+      <SettingsList>
         <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
@@ -360,29 +412,48 @@ class ShieldsTab extends ImmutableComponent {
   }
   render () {
     return <div id='shieldsContainer'>
-      <SettingsList dataL10nId='braveryDefaults'>
-        <SettingItem dataL10nId='adControl'>
-          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
-            <option data-l10n-id='showBraveAds' value='showBraveAds' />
-            <option data-l10n-id='blockAds' value='blockAds' />
-            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='cookieControl'>
-          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
-            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
-            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
-          </select>
-        </SettingItem>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
-        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='advancedPrivacySettings'>
-        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
+      <div className='settingsListTitle' data-l10n-id='braveryDefaults' />
+      <div className='pull-left column'>
+        <SettingsList>
+          <SettingItem dataL10nId='adControl'>
+            <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
+              <option data-l10n-id='showBraveAds' value='showBraveAds' />
+              <option data-l10n-id='blockAds' value='blockAds' />
+              <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
+            </select>
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+        </SettingsList>
+        <SitePermissionsPage siteSettings={this.props.siteSettings} />
+      </div>
+      <div className='pull-left column gutter'>
+        <SettingsList>
+          <SettingItem dataL10nId='cookieControl'>
+            <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
+              <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
+              <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
+            </select>
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem>
+            <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
+          </SettingItem>
+          <SettingItem>
+            <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
+          </SettingItem>
+        </SettingsList>
+      </div>
     </div>
   }
 }
@@ -467,7 +538,8 @@ class AdvancedTab extends ImmutableComponent {
   render () {
     const defaultZoomSetting = getSetting(settings.DEFAULT_ZOOM_LEVEL, this.props.settings)
     return <div>
-      <SettingsList dataL10nId='contentRenderingOptions'>
+      <div className='settingsListTitle' data-l10n-id='contentRenderingOptions' />
+      <SettingsList>
         <SettingItem dataL10nId='defaultZoomLevel'>
           <select
             value={defaultZoomSetting === undefined || defaultZoomSetting === null ? config.zoom.defaultValue : defaultZoomSetting}
@@ -564,6 +636,7 @@ class PreferenceNavigation extends ImmutableComponent {
       />
       <PreferenceNavigationButton icon='fa-refresh'
         dataL10nId='sync'
+        className='notImplemented'
         onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
         selected={this.props.preferenceTab === preferenceTabs.SYNC}
       />

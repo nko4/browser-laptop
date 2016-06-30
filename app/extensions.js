@@ -53,8 +53,7 @@ let generateBraveManifest = () => {
           'content/scripts/passwordManager.js',
           'content/scripts/flashListener.js',
           'js/actions/extensionActions.js',
-          'content/scripts/themeColor.js',
-          'content/scripts/publisherIdentification.js'
+          'content/scripts/themeColor.js'
         ]
       },
       {

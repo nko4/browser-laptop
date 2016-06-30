@@ -6,143 +6,50 @@ strong, div, span, li, em, p, a {
 }
 
 .notImplemented {
-  display: none;
-}
-
-.modal {
-  opacity: 1;
-  position: fixed;
-  background: @white50;
-  width: 100vw;
-  height: 100vh;
-  left: 0;
-  top: 0;
-  z-index: 8999;
-
-  &.fade {
-    transition: @transitionFast;
-  }
-
-  &.hidden {
-    opacity: 0;
-    z-index: -1;
-  }
-
-  .modal {
-    background: transparent;
-
-    .dialog {
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background: transparent;
-      box-shadow: none;
-      border: none;
-
-      button.close {
-        margin-top: -8px;
-        margin-right: -8px;
-        span {
-          font-size: 1.5em;
-          color: @highlightBlue;
-        }
-      }
-
-      iframe {
-        display: block;
-        width: 100%;
-        height: 100%;
-        border: none;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
-    }
-  }
-
-  .dialog {
-    position: fixed;
-    width: 90%;
-    left: 5%;
-    top: 15%;
-    background: white;
-    border: solid 1px @lightGray;
-    border-radius: @borderRadius;
-    box-shadow: @boxShadow;
-    z-index: 9000;
-    padding: 20px;
-    box-sizing: border-box;
-
-    &.fade {
-      transition: @transitionFast;
-    }
-
-    .settingsListTitle:first-of-type {
-      margin-bottom: 10px;
-    }
-
-    .settingsListLabel {
-      font-size: 0.75em;
-      margin-top: 0.5em;
-    }
-  }
-
-  button {
-    display: block;
-    min-width: 80px;
-    height: 3em;
-    vertical-align: middle;
-    text-align: center;
-    border: solid 1px @braveMediumOrange;
-    background: linear-gradient(to bottom, @braveOrange, @braveMediumOrange);
-    border-radius: @borderRadius;
-    color: white;
-    box-shadow: @lightBoxShadow;
-    font-size: 0.9em;
-    font-weight: 600;
-    cursor: pointer;
-    outline: none;
-
-    &.close {
-      display: inline-block;
-      background: none;
-      height: 2em;
-      width: 2em;
-      min-width: 2em;
-      cursor: pointer;
-      border: none;
-      box-shadow: none;
-
-      span {
-        font-size: 2em;
-        color: @braveOrange;
-      }
-    }
-
-    &.alt {
-      background: @gray;
-      border: solid 1px @gray;
-    }
-  }
+  display: none !important; /* for testing/debug only */
 }
 
 .prefTabContainer {
   flex-grow: 1;
-  padding: 60px 30px 30px 30px;
+  padding: 40px;
+  min-width: 704px;
+  background: @veryLightGray;
+
+  > div {
+    > .column {
+      width: 320px;
+
+      &.gutter {
+        border-left: solid 1px @lightGray;
+        padding-left: 40px;
+      }
+      > div .settingsList {
+        margin: 2.5em 0 1em;
+      }
+      > div:first-of-type {
+        .settingsList {
+          margin: 1em 0;
+        }
+      }
+    }
+    > .settingsListTitle {
+      color: @braveOrange;
+      font-size: 1.125em;
+      margin-bottom: 1.25em;
+      margin-top: 0;
+    }
+  }
 }
 
 .prefAside {
   background-color: @gray;
   box-shadow: @insetShadow;
   position: fixed;
+  z-index: 600;
   width: @sideBarWidth;
   height: 100%;
 
-  >div {
+  > div {
     display: block;
     width: 100%;
 
@@ -154,11 +61,13 @@ strong, div, span, li, em, p, a {
       font-size: 0.9em;
       font-weight: 300;
     }
+
     &:hover {
       .topBarButton.fa {
         background-color: @darkGray;
       }
     }
+
     .topBarButton.fa {
       display: flex;
       align-items: center;
@@ -247,11 +156,11 @@ strong, div, span, li, em, p, a {
     font-weight: normal;
     margin: 10px;
     * {
-      color: @white50;
+      color: white;
     }
   }
   > div {
-    color: @white50;
+    color: white;
     font-size: smaller;
     margin: 10px;
   }
@@ -259,14 +168,14 @@ strong, div, span, li, em, p, a {
     position: absolute;
     bottom: 0;
     a {
-      color: @white50;
+      color: white;
     }
     .loveToHear {
       color: initial;
       font-size: smaller;
       margin-top: 5px;
       margin-bottom: 30px;
-      color: @white50;
+      color: white;
     }
   }
   .hintsRefresh {
@@ -318,9 +227,12 @@ a {
 }
 
 .settingsListTitle,
-.settingsListLink {
-  color: black;
-  font-size: 1.2em;
+.settingsListLink,
+.settingsList .settingItem span:not(.browserButton),
+.settingsList em {
+  color: @darkGray;
+  font-size: 0.9em;
+  margin: 2em 0 0.75em;
 }
 
 .settingsListLink {
@@ -339,44 +251,41 @@ a {
 }
 
 .settingsList {
-  margin-bottom: 10px;
-  width: 500px;
 
   .settingItem {
-    margin-bottom: 10px;
 
     > *:not(.switchControl) {
       margin-bottom: 10px;
       min-width: 160px;
-      line-height: 2em;
+      vertical-align: middle;
     }
 
     .switchControl {
       min-width: 60px;
     }
 
-    span {
+    span:not(.browserButton) {
+      display: block;
       padding-right: 10px;
-      color: @braveOrange;
-      font-size: 1.25em;
     }
 
     label {
       text-align: left;
+      font-size: 0.95em;
     }
 
     > input,
     > select {
       display: block;
       border-radius: @borderRadius;
-      height: 3em;
+      height: 2.25em;
       font-size: 0.9em;
       padding: 10px;
-      margin: 10px;
-      border: none;
+      margin: 10px 0;
+      border: solid 1px @lightGray;
       background: white;
       color: @darkGray;
-      box-shadow: 0 0 5px @black50;
+      box-shadow: @lightBoxShadow;
       cursor: pointer;
       outline: none;
     }
@@ -404,16 +313,15 @@ input[type="checkbox"][disabled] {
 }
 
 .linkText {
+  display: inline-block;
   text-decoration: underline;
-  color: #5B5B5B;
+  color: @braveOrange;
   cursor: default;
+  margin: 20px auto;
+
   &:hover {
     color: #000;
   }
-}
-
-#flashInfoIcon {
-  padding: 5px;
 }
 
 .permissionItem {
@@ -441,8 +349,15 @@ input[type="checkbox"][disabled] {
   padding: 3px;
 }
 
-#shieldsContainer {
+table.sortableTable {
+  width: 704px;
 
+  tbody td:first-of-type {
+    text-align: center;
+    color: @braveOrange;
+    font-weight: 800;
+    cursor: pointer;
+  }
 }
 
 .emptyMessage {
@@ -603,6 +518,10 @@ input[type="checkbox"][disabled] {
       color: white;
     }
   }
+}
+
+#flashInfoIcon {
+  padding: 5px;
 }
 
 #coinbaseLogo {
