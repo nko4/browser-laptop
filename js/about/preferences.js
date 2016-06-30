@@ -87,7 +87,7 @@ class SettingsList extends ImmutableComponent {
 class SettingItem extends ImmutableComponent {
   render () {
     return <div className='settingItem'>
-      <span data-l10n-id={this.props.dataL10nId} />
+      {this.props.dataL10nId ? <span data-l10n-id={this.props.dataL10nId} /> : null}
       {this.props.children}
     </div>
   }
@@ -114,12 +114,11 @@ class GeneralTab extends ImmutableComponent {
   }
   render () {
     var languageOptions = this.props.languageCodes.map(function (lc) {
-      return (
-        <option data-l10n-id={lc} value={lc} />
-      )
+      return (<option data-l10n-id={lc} value={lc} />)
     })
-    const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
     console.log(this.props)
+    var bookmarkOptions = <option data-l10n-id={'Text and Favicons'} value={'Text and Favicons'} />
+    const defaultLanguage = this.props.languageCodes.find((lang) => lang.includes(navigator.language)) || 'en-US'
     return <div>
       <div className='settingsListTitle' data-l10n-id='generalSettings' />
       <div className='pull-left column'>
@@ -148,13 +147,17 @@ class GeneralTab extends ImmutableComponent {
           <SettingItem>
             <SettingCheckbox dataL10nId='showHomeButton' prefKey={settings.SHOW_HOME_BUTTON} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
           </SettingItem>
-          <SettingItem>
-            {
-              isDarwin ? null : <SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-            }
-          </SettingItem>
+          {isDarwin ? null : <SettingItem><SettingCheckbox dataL10nId='autoHideMenuBar' prefKey={settings.AUTO_HIDE_MENU} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} /></SettingItem>}
           <SettingItem>
             <SettingCheckbox dataL10nId='disableTitleMode' prefKey={settings.DISABLE_TITLE_MODE} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+          </SettingItem>
+        </SettingsList>
+        <SettingsList>
+          <SettingItem dataL10nId='bookmarkToolbarSettings'>
+            <select value={getSetting(settings.SHOW_BOOKMARKS_TOOLBAR, this.props.settings) || defaultLanguage}
+              onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.SHOW_BOOKMARKS_TOOLBAR)} >
+              {bookmarkOptions}
+            </select>
           </SettingItem>
         </SettingsList>
         <SettingsList>
@@ -171,22 +174,17 @@ class GeneralTab extends ImmutableComponent {
           <SettingItem dataL10nId='setDefaultLabel'>
             <span type='button' className='browserButton tactileButton' onClick={this.onSetDefaultButtonClick.bind(this)} data-l10n-id='setDefaultButton' />
           </SettingItem>
-          <SettingItem>
-            <SettingCheckbox dataL10nId='setDefaultAlwaysSwitch' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          </SettingItem>
+          <SettingCheckbox dataL10nId='setDefaultAlwaysSwitch' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
           <SettingItem dataL10nId='importLabel'>
             <span type='button' className='browserButton tactileButton' onClick={this.onDataImportButtonClick.bind(this)} data-l10n-id='importButton' />
           </SettingItem>
         </SettingsList>
         <SettingsList>
-          <SettingItem>
-            <SettingCheckbox dataL10nId='bookmarkToolbarShowFavicon' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          </SettingItem>
+          <SettingCheckbox dataL10nId='bookmarkToolbar' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         </SettingsList>
         <SettingsList>
-          <SettingItem dataL10nId='braveStaysUpdated'>
-            <SettingCheckbox dataL10nId='notifyOnUpdate' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-          </SettingItem>
+          <em data-l10n-id='braveStaysUpdated' />
+          <SettingCheckbox dataL10nId='notifyOnUpdate' prefKey={settings.SHOW_BOOKMARKS_TOOLBAR} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         </SettingsList>
       </div>
     </div>

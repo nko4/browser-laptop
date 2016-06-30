@@ -13,6 +13,7 @@ strong, div, span, li, em, p, a {
   flex-grow: 1;
   padding: 40px;
   min-width: 704px;
+  background: @veryLightGray;
 
   > div {
     > .column {
@@ -23,7 +24,7 @@ strong, div, span, li, em, p, a {
         padding-left: 40px;
       }
       > div .settingsList {
-        margin: 4em 0 1em;
+        margin: 2.5em 0 1em;
       }
       > div:first-of-type {
         .settingsList {
@@ -224,9 +225,10 @@ a {
 
 .settingsListTitle,
 .settingsListLink,
-.settingsList .settingItem span:not(.browserButton) {
-  color: @mediumGray;
-  font-size: 1em;
+.settingsList .settingItem span:not(.browserButton),
+.settingsList em {
+  color: @darkGray;
+  font-size: 0.9em;
   margin: 2em 0 0.75em;
 }
 
