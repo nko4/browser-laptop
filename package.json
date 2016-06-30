@@ -80,11 +80,12 @@
     "react-dom": "^15.0.1",
     "react-stickynode": "^1.1.2",
     "spellchecker": "^3.3.1",
-    "tablesort": "4.0.1",
     "l20n": "^3.5.1",
     "string.prototype.endswith": "^0.2.0",
     "string.prototype.startswith": "^0.2.0",
+    "tablesort": "4.0.1",
     "tracking-protection": "1.1.x",
+    "underscore.string": "3.3.x",
     "url-loader": "^0.5.7"
   },
   "devDependencies": {
