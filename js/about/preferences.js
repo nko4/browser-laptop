@@ -41,14 +41,16 @@ require('../../less/switchControls.less')
 require('../../less/about/preferences.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
-const permissionNames = ['mediaPermission',
-  'geolocationPermission',
-  'notificationsPermission',
-  'midiSysexPermission',
-  'pointerLockPermission',
-  'fullscreenPermission',
-  'openExternalPermission'
-]
+const permissionNames = {
+  'mediaPermission': 'boolean',
+  'geolocationPermission': 'boolean',
+  'notificationsPermission': 'boolean',
+  'midiSysexPermission': 'boolean',
+  'pointerLockPermission': 'boolean',
+  'fullscreenPermission': 'boolean',
+  'openExternalPermission': 'boolean',
+  'flash': 'number'
+}
 
 const changeSetting = (cb, key, e) => {
   if (e.target.type === 'checkbox') {
@@ -382,7 +384,6 @@ class ShieldsTab extends ImmutableComponent {
       <SettingsList dataL10nId='advancedPrivacySettings'>
         <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
     </div>
   }
 }
@@ -437,6 +438,7 @@ class SyncTab extends ImmutableComponent {
       <SettingsList dataL10nId='passwordSettings'>
         <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <div classname='settingItem'>
           <span className='linkText' data-l10n-id='managePasswords'
@@ -459,6 +461,7 @@ class SyncTab extends ImmutableComponent {
             : <span data-l10n-id='enableFlashSubtextLinux' />
         }
       </div>
+      <SitePermissionsPage siteSettings={this.props.siteSettings} />
     </div>
   }
 }
@@ -728,7 +731,7 @@ class AboutPreferences extends React.Component {
         tab = <TabsTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SECURITY:
-        tab = <SecurityTab settings={settings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
+        tab = <SecurityTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SHIELDS:
         tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />

@@ -291,6 +291,8 @@ class Main extends ImmutableComponent {
       windowActions.setPopupWindowDetail(Immutable.fromJS({
         left: props.x,
         top: props.y + 100,
+        height: props.height,
+        width: props.width,
         maxHeight: window.innerHeight - 100,
         minHeight: 400,
         src
@@ -848,7 +850,7 @@ class Main extends ImmutableComponent {
                       .includes(siteTags.BOOKMARK_FOLDER)) || new Immutable.Map()
                 : null}
               passwords={this.props.appState.get('passwords')}
-              flashEnabled={this.props.appState.get('flashEnabled')}
+              flashInitialized={this.props.appState.get('flashInitialized')}
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}
