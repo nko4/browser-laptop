@@ -41,14 +41,16 @@ require('../../less/switchControls.less')
 require('../../less/about/preferences.less')
 require('../../node_modules/font-awesome/css/font-awesome.css')
 
-const permissionNames = ['mediaPermission',
-  'geolocationPermission',
-  'notificationsPermission',
-  'midiSysexPermission',
-  'pointerLockPermission',
-  'fullscreenPermission',
-  'openExternalPermission'
-]
+const permissionNames = {
+  'mediaPermission': 'boolean',
+  'geolocationPermission': 'boolean',
+  'notificationsPermission': 'boolean',
+  'midiSysexPermission': 'boolean',
+  'pointerLockPermission': 'boolean',
+  'fullscreenPermission': 'boolean',
+  'openExternalPermission': 'boolean',
+  'flash': 'number'
+}
 
 const changeSetting = (cb, key, e) => {
   if (e.target.type === 'checkbox') {
@@ -314,6 +316,7 @@ class SecurityTab extends ImmutableComponent {
       <SettingsList dataL10nId='passwordSettings'>
         <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
         <div classname='settingItem'>
           <span className='linkText' data-l10n-id='managePasswords'
@@ -323,8 +326,20 @@ class SecurityTab extends ImmutableComponent {
         </div>
       </SettingsList>
       <SettingsList dataL10nId='pluginSettings'>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('flash')} dataL10nId='enableFlash' onChange={this.onToggleFlash} />
+        <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
       </SettingsList>
+      <div className='subtext'>
+        <span className='fa fa-info-circle' id='flashInfoIcon' />
+        {
+          isDarwin || isWindows
+            ? <span><span data-l10n-id='enableFlashSubtext' />
+              <span className='linkText'onClick={aboutActions.newFrame.bind(null, {
+                location: 'https://get.adobe.com/flashplayer'
+              })}>{'Adobe'}</span>.</span>
+            : <span data-l10n-id='enableFlashSubtextLinux' />
+        }
+      </div>
+      <SitePermissionsPage siteSettings={this.props.siteSettings} />
     </div>
   }
 }
@@ -382,7 +397,6 @@ class ShieldsTab extends ImmutableComponent {
       <SettingsList dataL10nId='advancedPrivacySettings'>
         <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
     </div>
   }
 }
@@ -434,31 +448,7 @@ PaymentsTab.defaultProps = { data: [] }
 class SyncTab extends ImmutableComponent {
   render () {
     return <div>
-      <SettingsList dataL10nId='passwordSettings'>
-        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <div classname='settingItem'>
-          <span className='linkText' data-l10n-id='managePasswords'
-            onClick={aboutActions.newFrame.bind(null, {
-              location: 'about:passwords'
-            }, true)}></span>
-        </div>
-      </SettingsList>
-      <SettingsList dataL10nId='pluginSettings'>
-        <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
-      </SettingsList>
-      <div className='subtext'>
-        <span className='fa fa-info-circle' id='flashInfoIcon' />
-        {
-          isDarwin || isWindows
-            ? <span><span data-l10n-id='enableFlashSubtext' />
-              <span className='linkText'onClick={aboutActions.newFrame.bind(null, {
-                location: 'https://get.adobe.com/flashplayer'
-              })}>{'Adobe'}</span>.</span>
-            : <span data-l10n-id='enableFlashSubtextLinux' />
-        }
-      </div>
+      Sync settings coming soon
     </div>
   }
 }
@@ -580,15 +570,15 @@ class PreferenceNavigation extends ImmutableComponent {
 class SitePermissionsPage extends React.Component {
   hasEntryForPermission (name) {
     return this.props.siteSettings.some((value) => {
-      return value.get ? typeof value.get(name) === 'boolean' : false
+      return value.get ? typeof value.get(name) === permissionNames[name] : false
     })
   }
   isPermissionsNonEmpty () {
     // Check whether there is at least one permission set
     return this.props.siteSettings.some((value) => {
       if (value && value.get) {
-        for (let i = 0; i < permissionNames.length; i++) {
-          if (typeof value.get(permissionNames[i]) === 'boolean') {
+        for (let name in permissionNames) {
+          if (typeof value.get(name) === permissionNames[name]) {
             return true
           }
         }
@@ -597,15 +587,15 @@ class SitePermissionsPage extends React.Component {
     })
   }
   deletePermission (name, hostPattern) {
-    aboutActions.changeSiteSetting(hostPattern, name, null)
+    aboutActions.removeSiteSetting(hostPattern, name)
   }
   render () {
     return this.isPermissionsNonEmpty()
-    ? <div>
+    ? <div id='sitePermissionsPage'>
       <div data-l10n-id='sitePermissions'></div>
       <ul className='sitePermissions'>
         {
-          permissionNames.map((name) =>
+          Object.keys(permissionNames).map((name) =>
             this.hasEntryForPermission(name)
             ? <li>
               <div data-l10n-id={name} className='permissionName'></div>
@@ -616,12 +606,30 @@ class SitePermissionsPage extends React.Component {
                     return null
                   }
                   const granted = value.get(name)
-                  if (typeof granted === 'boolean') {
+                  if (typeof granted === permissionNames[name]) {
+                    let statusText
+                    let statusArgs
+                    if (name === 'flash') {
+                      // Show the number of days/hrs/min til expiration
+                      if (granted === 1) {
+                        // Flash is allowed just one time
+                        statusText = 'flashAllowOnce'
+                      } else {
+                        statusText = 'flashAllowAlways'
+                        statusArgs = {
+                          time: new Date(granted).toLocaleString()
+                        }
+                      }
+                    } else {
+                      statusText = granted ? 'alwaysAllow' : 'alwaysDeny'
+                    }
                     return <div className='permissionItem'>
                       <span className='fa fa-times permissionAction'
                         onClick={this.deletePermission.bind(this, name, hostPattern)}></span>
                       <span className='permissionHost'>{hostPattern + ': '}</span>
-                      <span className='permissionStatus' data-l10n-id={granted ? 'alwaysAllow' : 'alwaysDeny'}></span>
+                      <span className='permissionStatus'
+                        data-l10n-id={statusText}
+                        data-l10n-args={statusArgs ? JSON.stringify(statusArgs) : null}></span>
                     </div>
                   }
                   return null
@@ -728,7 +736,7 @@ class AboutPreferences extends React.Component {
         tab = <TabsTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SECURITY:
-        tab = <SecurityTab settings={settings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
+        tab = <SecurityTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SHIELDS:
         tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />

@@ -50,6 +50,7 @@ const messages = {
   SHOW_FLASH_INSTALLED_MESSAGE: _,
   // Downloads
   SHOW_DOWNLOADS_TOOLBAR: _, /** Ensures the downloads toolbar is visible */
+  HIDE_DOWNLOADS_TOOLBAR: _, /** Hides the downloads toolbar */
   DOWNLOAD_ACTION: _, /** @arg {string} downloadId, @arg {string} action such as 'resume', 'pause', or 'cancel' */
   // Updates
   UPDATE_REQUESTED: _,
@@ -116,6 +117,7 @@ const messages = {
   // About pages from contentScript
   CHANGE_SETTING: _,
   CHANGE_SITE_SETTING: _,
+  REMOVE_SITE_SETTING: _,
   NEW_FRAME: _,
   MOVE_SITE: _,
   OPEN_DOWNLOAD_PATH: _,

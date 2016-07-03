@@ -28,6 +28,8 @@ var rendererIdentifiers = function () {
     'copyLinkAddress',
     'copyEmailAddress',
     'saveLinkAs',
+    'allowFlashOnce',
+    'allowFlashAlways',
     'openInNewWindow',
     'openInNewSessionTab',
     'openInNewPrivateTab',
@@ -127,6 +129,7 @@ var rendererIdentifiers = function () {
     'find',
     'checkForUpdates',
     'preferences',
+    'settings',
     'bookmarksManager',
     'importBookmarks',
     'reportAnIssue',
@@ -155,6 +158,7 @@ var rendererIdentifiers = function () {
     'tabsSuggestionTitle',
     'bookmarksSuggestionTitle',
     'historySuggestionTitle',
+    'aboutPagesSuggestionTitle',
     'searchSuggestionTitle',
     'topSiteSuggestionTitle'
   ]

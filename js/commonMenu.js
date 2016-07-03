@@ -161,7 +161,7 @@ module.exports.checkForUpdateMenuItem = () => {
 
 module.exports.preferencesMenuItem = () => {
   return {
-    label: locale.translation('preferences'),
+    label: locale.translation(isDarwin ? 'preferences' : 'settings'),
     accelerator: 'CmdOrCtrl+,',
     click: (item, focusedWindow) => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -201,6 +201,7 @@ module.exports.downloadsMenuItem = () => {
           location: 'about:downloads'
         }))
       } else {
+        module.exports.sendToFocusedWindow(focusedWindow, [messages.HIDE_DOWNLOADS_TOOLBAR])
         module.exports.sendToFocusedWindow(focusedWindow, [messages.SHORTCUT_NEW_FRAME, 'about:downloads', { singleFrame: true }])
       }
     }

@@ -78,7 +78,6 @@ if (chrome.contentSettings.canvasFingerprinting == 'block') {
 
     // Block the read from occuring; send info to background page instead
     chrome.ipc.sendToHost('got-canvas-fingerprinting', msg)
-    throw 'access denied'
   }
 
   /**
@@ -144,6 +143,18 @@ if (chrome.contentSettings.canvasFingerprinting == 'block') {
       objName: 'AnalyserNode',
       propName: method,
       obj: AnalyserNode
+    }
+    methods.push(item)
+  })
+
+  // Based on https://github.com/webrtcHacks/webrtcnotify
+  var webrtcMethods = ['createOffer', 'createAnswer', 'setLocalDescription', 'setRemoteDescription']
+  webrtcMethods.forEach(function (method) {
+    var item = {
+      type: 'WebRTC',
+      objName: 'webkitRTCPeerConnection',
+      propName: method,
+      obj: webkitRTCPeerConnection
     }
     methods.push(item)
   })

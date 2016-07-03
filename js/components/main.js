@@ -291,6 +291,8 @@ class Main extends ImmutableComponent {
       windowActions.setPopupWindowDetail(Immutable.fromJS({
         left: props.x,
         top: props.y + 100,
+        height: props.height,
+        width: props.width,
         maxHeight: window.innerHeight - 100,
         minHeight: 400,
         src
@@ -318,6 +320,10 @@ class Main extends ImmutableComponent {
 
     ipc.on(messages.SHOW_DOWNLOADS_TOOLBAR, () => {
       windowActions.setDownloadsToolbarVisible(true)
+    })
+
+    ipc.on(messages.HIDE_DOWNLOADS_TOOLBAR, () => {
+      windowActions.setDownloadsToolbarVisible(false)
     })
 
     const self = this
@@ -625,6 +631,12 @@ class Main extends ImmutableComponent {
     return siteSettings.getSiteSettingsForURL(this.allSiteSettings, location)
   }
 
+  frameBraverySettings (location) {
+    return Immutable.fromJS(siteSettings.activeSettings(this.frameSiteSettings(location),
+                                                        this.props.appState,
+                                                        appConfig))
+  }
+
   get activeSiteSettings () {
     return this.frameSiteSettings(this.activeRequestedLocation)
   }
@@ -848,7 +860,7 @@ class Main extends ImmutableComponent {
                       .includes(siteTags.BOOKMARK_FOLDER)) || new Immutable.Map()
                 : null}
               passwords={this.props.appState.get('passwords')}
-              flashEnabled={this.props.appState.get('flashEnabled')}
+              flashInitialized={this.props.appState.get('flashInitialized')}
               allSiteSettings={allSiteSettings}
               activeSiteSettings={activeSiteSettings}
               enableAds={this.enableAds}
@@ -856,6 +868,7 @@ class Main extends ImmutableComponent {
               enableFingerprintingProtection={this.enableFingerprintingProtection}
               block3rdPartyStorage={this.block3rdPartyStorage}
               frameSiteSettings={this.frameSiteSettings(frame.get('location'))}
+              frameBraverySettings={this.frameBraverySettings(frame.get('location'))}
               enableNoScript={this.enableNoScript(this.frameSiteSettings(frame.get('location')))}
               isPreview={frame.get('key') === this.props.windowState.get('previewFrameKey')}
               isActive={FrameStateUtil.isFrameKeyActive(this.props.windowState, frame.get('key'))}
