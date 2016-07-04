@@ -224,11 +224,7 @@ var callback = (err, result, delayTime) => {
     }
     returnValue.statusText = 'Initialized.'
   } else if (result.persona) {
-    if (result.properties) {
-      returnValue.statusText = 'Anonymously ' + (result.options.wallet ? 'registered' : 'created') + ' wallet.'
-    } else {
-      returnValue.statusText = 'Preparing to anonymously ' + (result.options.wallet ? 'register' : 'create') + ' wallet.'
-    }
+    returnValue.statusText = ''
   } else {
     returnValue.statusText = 'Initializing'
   }

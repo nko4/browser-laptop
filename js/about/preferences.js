@@ -423,6 +423,9 @@ class PaymentsTab extends ImmutableComponent {
     BitcoinDashboard.defaultProps = this.props.data
     return <BitcoinDashboard />
   }
+  getFundingLink () {
+    return !this.props.paymentURL ? <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} /> : null
+  }
   hideOverlay (event) {
     this.setState({ shouldShowOverlay: false })
   }
@@ -435,7 +438,7 @@ class PaymentsTab extends ImmutableComponent {
       <div className='titleBar'>
         <div className='settingsListTitle pull-left' data-l10n-id='publisherPaymentsTitle' value='publisherPaymentsTitle' />
         {this.getButtonContent()}
-        <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} />
+        {this.getFundingLink()}
       </div>
       {this.getNotificationContent()}
       {this.getTableContent()}
