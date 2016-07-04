@@ -456,19 +456,19 @@ var handleGeneralCommunication = (event) => {
 
   if (!returnValue.synopsis) returnValue.synopsis = synopsisNormalizer()
 
+  now = underscore.now()
+
+  timestamp = now
+  underscore.keys(synopsis.publishers).forEach((publisher) => {
+    var then = underscore.last(synopsis.publishers[publisher].window).timestamp
+
+    if (timestamp > then) timestamp = then
+  })
+  returnValue.statusText = 'Publisher synopsis as of ' + moment(timestamp).fromNow()
   if (returnValue._internal.reconcileStamp) {
-    now = underscore.now()
-
-    timestamp = now
-    underscore.keys(synopsis.publishers).forEach((publisher) => {
-      var then = underscore.last(synopsis.publishers[publisher].window).timestamp
-
-      if (timestamp > then) timestamp = then
-    })
-
-    returnValue.statusText = 'Publisher synopsis as of ' + moment(timestamp).fromNow() + ', reconcilation due ' +
-      moment(returnValue._internal.reconcileStamp).fromNow() + '.'
+    returnValue.statusText += ', reconcilation due ' + moment(returnValue._internal.reconcileStamp).fromNow()
   }
+  returnValue.statusText += '.'
 
   result = underscore.omit(returnValue, '_internal')
   info = returnValue._internal.paymentInfo
@@ -481,9 +481,7 @@ var handleGeneralCommunication = (event) => {
 
     underscore.extend(result, returnValue._internal.cache || {})
   }
-/*
   console.log('\n' + JSON.stringify(underscore.omit(result, [ 'synopsis', 'buyIMG', 'paymentIMG' ]), null, 2))
- */
 
   returnValue.notifyP = false
   event.returnValue = result
