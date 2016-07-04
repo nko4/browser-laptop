@@ -470,8 +470,6 @@ var handleGeneralCommunication = (event) => {
       if (timestamp > then) timestamp = then
     })
 
-    console.log('reconcileStamp = ' + new Date(returnValue._internal.reconcileStamp))
-    console.log('           now = ' + new Date(now))
     returnValue.statusText = 'Publisher synopsis as of ' + moment(timestamp).fromNow() + ', reconcilation due ' +
       moment(returnValue._internal.reconcileStamp).fromNow() + '.'
   }
