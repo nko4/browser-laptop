@@ -424,7 +424,7 @@ class PaymentsTab extends ImmutableComponent {
     return <BitcoinDashboard />
   }
   getFundingLink () {
-    return !this.props.paymentURL ? <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} /> : null
+    return !this.props.address ? <div className='settingsListLink pull-right' data-l10n-id='addFundsTitle' value='addFundsTitle' onClick={this.showOverlay.bind(this)} /> : null
   }
   hideOverlay (event) {
     this.setState({ shouldShowOverlay: false })
