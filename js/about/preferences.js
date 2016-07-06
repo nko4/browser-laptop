@@ -17,7 +17,6 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
-const clipboard = null
 const tableSort = require('tablesort')
 const pad = require('underscore.string/pad')
 
@@ -180,7 +179,7 @@ class BitcoinDashboard extends ImmutableComponent {
   }
   copyToClipboard (text) {
     console.log('Bitcoin Address: ' + text)
-    try { clipboard.writeText(text) } catch (e) { }
+    document.execCommand('copy')
   }
   goToURL (url) {
     return window.open(url, '_blank')
