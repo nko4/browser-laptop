@@ -17,6 +17,7 @@ const messages = require('../constants/messages')
 const settings = require('../constants/settings')
 const aboutActions = require('./aboutActions')
 const getSetting = require('../settings').getSetting
+const clipboard = null
 const tableSort = require('tablesort')
 const pad = require('underscore.string/pad')
 
@@ -177,8 +178,9 @@ class BitcoinDashboard extends ImmutableComponent {
   getOverlayContent () {
     return <iframe src={this.props.buyURL} />
   }
-  copyToClipboard (clipboard) {
-    console.log('Bitcoin Address: ' + clipboard)
+  copyToClipboard (text) {
+    console.log('Bitcoin Address: ' + text)
+    try { clipboard.writeText(text) } catch (e) { }
   }
   goToURL (url) {
     return window.open(url, '_blank')
@@ -195,6 +197,7 @@ class BitcoinDashboard extends ImmutableComponent {
   render () {
     var emptyDialog = true
     window.addEventListener('message', this.hideOverlay.bind(this), false)
+// if someone can figure out how to get a localized title attribute (bitcoinCopyAddress) here, please do so!
     return <div id='bitcoinDashboard'>
       <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} emptyDialog={emptyDialog} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
       <div>{this.props.statusText}</div>
@@ -204,7 +207,7 @@ class BitcoinDashboard extends ImmutableComponent {
           <a href={this.props.paymentURL} target='_blank'>
             <img src={this.props.paymentIMG} alt={'Add Bitcoin'} />
           </a>
-          <div className='settingsListLink alt' data-l10n-id='bitcoinCopyAddress' onClick={this.copyToClipboard.bind(this, this.props.address || 'Not available')} />
+          <div className='settingsListCopy alt'><span className='settingsListCopy' onClick={this.copyToClipboard.bind(this, this.props.address || 'Not available')} title={'Copy Bitcoin address to clipboard'}>{this.props.address}</span></div>
           <button data-l10n-id='bitcoinVisitAccount' onClick={this.goToURL.bind(this, this.props.paymentURL)} />
         </div>
         <div className='panel'>

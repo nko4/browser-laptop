@@ -318,9 +318,28 @@ a {
 }
 
 .settingsListTitle,
+.settingsListCopy,
 .settingsListLink {
   color: black;
   font-size: 1.2em;
+}
+
+.settingsListCopy {
+  color: @braveOrange;
+  cursor: pointer;
+  font-family: "Lucida Sans Typewriter", "Lucida Console", monaco, "Bitstream Vera Sans Mono", monospace;
+  font-size: 1em;
+
+  &.alt {
+    color: black;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+span.settingsListCopy {
+  background-color: @lightGray;
 }
 
 .settingsListLink {
