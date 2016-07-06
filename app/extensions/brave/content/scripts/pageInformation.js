@@ -11,9 +11,9 @@ if (node) results.favicon = node.getAttribute('href')
 
 // hard-coded for now... will be dynamic in the beta (I hope!)
 let href = document.location.href
-if (href.hostname === 'youtube.com' && href.pathname.indexOf('/channel') === 0) {
+if (href.indexOf('www.youtube.com/watch?') !== -1) {
   node = document.body.querySelector("#watch7-content.watch-main-col meta[itemprop='channelId']")
-  if (node) results.publisher = node.getAttribute('content')
+  if (node) results.publisher = 'youtube.com/channel/' + node.getAttribute('content')
 }
 
 if (Object.keys(results).length !== 0) ExtensionActions.setPageInfo(href, results)

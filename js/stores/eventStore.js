@@ -68,9 +68,7 @@ const doAction = (action) => {
       lastActivePageUrl = action.frameProps.get('src')
       break
     case 'event-set-page-info':
-      console.log('\nevent-set-page-info=' + JSON.stringify(action, null, 2))
-      eventState.set('page_info', Immutable.fromJS(action))
-      console.log('\npage_info=' + JSON.stringify(eventState.get('page_info'), null, 2))
+      eventState = eventState.set('page_info', action.pageInfo)
       break
     default:
   }

@@ -6,6 +6,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const util = require('util')
 
 const electron = require('electron')
 const app = electron.app
@@ -373,11 +374,17 @@ var triggerNotice = () => {
   console.log('ledger notice primed')
 }
 
-eventStore.addChangeListener(() => {
-  var info = eventStore.getState()
+var pages = {}
 
-  if ((!info.page_info) || (Object.keys(info.page_info).length === 0)) return
-  console.log('\nledger page_info: ' + JSON.stringify(info, null, 2))
+eventStore.addChangeListener(() => {
+  var event = eventStore.getState().toJS()
+  var info = event.page_info
+  var view = event.page_view
+
+  if ((!util.isArray(view)) || (view.length === 0) || (!view[0].url) || (Object.keys(info) === 0)) return
+
+  pages[view[0].url] = info
+  console.log('\npages=' + JSON.stringify(pages, null, 2))
 })
 
 module.exports.handleLedgerVisit = (event, location) => {
