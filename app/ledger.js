@@ -9,6 +9,7 @@ const app = electron.app
 const fs = require('fs')
 const moment = require('moment')
 const path = require('path')
+var qr = require('qr-image')
 var random = require('random-lib')
 const underscore = require('underscore')
 const messages = require('../js/constants/messages')
@@ -92,8 +93,7 @@ var init = () => {
         info = state.paymentInfo
         if (info) {
           returnValue._internal.paymentInfo = info
-
-          setTimeout(() => { cacheReturnValue() }, 5 * msecs.second)
+          cacheReturnValue()
 
           returnValue._internal.triggerID = setTimeout(() => { triggerNotice() },
                                                        state.options.debugP ? (5 * msecs.second) : 5 * msecs.minute)
@@ -248,8 +248,6 @@ var run = (delayTime) => {
   console.log('\nwhat? wait.')
 }
 
-const faviconPNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA0xpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MUNFNTM2NTcxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MUNFNTM2NTYxQzQyMTFFNjhEODk5OTY1MzJCOUU0QjEiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIgc3RSZWY6ZG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjUxZDUzZDBmLTYzOWMtMTE3OS04Yjk3LTg3Y2M5YTUyOWRmMSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PmF3+n4AAAAoSURBVHja7M1BAQAABAQw9O98SvDbCqyT1KepZwKBQCAQCAQ3VoABAAu6Ay00hnjWAAAAAElFTkSuQmCC'
-
 var synopsisNormalizer = () => {
   var i, duration, n, pct, publisher, results, total
   var data = []
@@ -273,7 +271,7 @@ var synopsisNormalizer = () => {
     data[i] = { rank: i + 1,
                  site: results[i].publisher, views: results[i].visits, duration: duration,
                  daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0,
-                 faviconURL: publisher.faviconURL || faviconPNG
+                 faviconURL: publisher.faviconURL
                }
     if (results[i].method) data[i].publisherURL = results[i].method + '://' + results[i].publisher
     pct[i] = Math.round((results[i].score * 100) / total)
@@ -334,7 +332,7 @@ var foo = (l, target) => {
 }
 
 var cacheReturnValue = () => {
-  var cache, paymentURL
+  var chunks, cache, paymentURL
   var info = returnValue._internal.paymentInfo
 
   if (!info) return
@@ -348,6 +346,14 @@ var cacheReturnValue = () => {
   if (cache.paymentURL === paymentURL) return
 
   cache.paymentURL = paymentURL
+  try {
+    chunks = []
+    qr.image(paymentURL, { type: 'png' }).on('data', (chunk) => { chunks.push(chunk) }).on('end', () => {
+      cache.paymentIMG = 'data:image/png;base64,' + Buffer.concat(chunks).toString('base64')
+    })
+  } catch (ex) {
+    console.log('qr.imageSync error: ' + ex.toString())
+  }
   cache.paymentIMG = 'https://chart.googleapis.com/chart?chs=150x150&chld=L|2&cht=qr&chl=' + encodeURI(cache.paymentURL)
 
   request.request({ url: cache.paymentIMG, responseType: 'blob' }, (err, response, blob) => {
@@ -376,7 +382,7 @@ var triggerNotice = () => {
   console.log('ledger notice primed')
 }
 
-module.exports.handleLedgerVisit = (e, location) => {
+module.exports.handleLedgerVisit = (event, location) => {
   var i, publisher
 
   if ((!synopsis) || (!location)) return
@@ -441,6 +447,11 @@ module.exports.handleLedgerVisit = (e, location) => {
   currentTS = (new Date()).getTime()
 }
 
+var handleLedgerReset = (event) => {
+  currentLocation = null
+  currentTS = (new Date()).getTime()
+}
+
 var handleGeneralCommunication = (event) => {
   var info, now, result, timestamp
 
@@ -490,5 +501,6 @@ const ipc = require('electron').ipcMain
 
 if (ipc) {
   ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
+  ipc.on(messages.LEDGER_RESET, handleLedgerReset)
   ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, handleGeneralCommunication)
 }

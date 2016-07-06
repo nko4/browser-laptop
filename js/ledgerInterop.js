@@ -5,13 +5,17 @@
 const ipc = global.require('electron').ipcRenderer
 const messages = require('./constants/messages')
 
-// Send message to main process containing the
-// current location
+// Send message to main process containing the current location
 module.exports.visit = (location) => {
   ipc.send(messages.LEDGER_VISIT, location)
 }
 
+// Send message to main process indicating a loss-of-focus, etc.
+module.exports.reset = () => {
+  ipc.send(messages.LEDGER_RESET)
+}
+
 // Retrieve the history from the main process
-module.exports.generalCommunications = (requestMessage) => {
-  return ipc.sendSync(messages.LEDGER_GENERAL_COMMUNICATION, requestMessage)
+module.exports.generalCommunications = () => {
+  return ipc.sendSync(messages.LEDGER_GENERAL_COMMUNICATION)
 }
