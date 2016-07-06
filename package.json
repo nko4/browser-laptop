@@ -165,6 +165,6 @@
   ],
   "engineStrict": true,
   "engines": {
-    "node": ">= 5.6.0"
+    "node": ">= 6.1.0"
   }
 }
