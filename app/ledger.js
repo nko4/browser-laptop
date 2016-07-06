@@ -4,16 +4,19 @@
 
 'use strict'
 
+const fs = require('fs')
+const path = require('path')
+
 const electron = require('electron')
 const app = electron.app
-const fs = require('fs')
 const moment = require('moment')
-const path = require('path')
 var qr = require('qr-image')
 var random = require('random-lib')
 const underscore = require('underscore')
+
 const messages = require('../js/constants/messages')
 const request = require('../js/lib/request')
+const eventStore = require('../js/stores/eventStore')
 
 // TBD: remove this post alpha
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
@@ -354,18 +357,6 @@ var cacheReturnValue = () => {
   } catch (ex) {
     console.log('qr.imageSync error: ' + ex.toString())
   }
-  cache.paymentIMG = 'https://chart.googleapis.com/chart?chs=150x150&chld=L|2&cht=qr&chl=' + encodeURI(cache.paymentURL)
-
-  request.request({ url: cache.paymentIMG, responseType: 'blob' }, (err, response, blob) => {
-    console.log('\nresponse: ' + cache.paymentIMG +
-                ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
-
-    if (err) return console.log('response error: ' + err.toString())
-    if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
-
-    cache.paymentIMG = blob
-  })
-  console.log('\nrequesting ' + cache.paymentIMG)
 }
 
 var triggerNotice = () => {
@@ -381,6 +372,13 @@ var triggerNotice = () => {
   returnValue.notifyP = true
   console.log('ledger notice primed')
 }
+
+eventStore.addChangeListener(() => {
+  var info = eventStore.getState()
+
+  if ((!info.page_info) || (Object.keys(info.page_info).length === 0)) return
+  console.log('\nledger page_info: ' + JSON.stringify(info, null, 2))
+})
 
 module.exports.handleLedgerVisit = (event, location) => {
   var i, publisher

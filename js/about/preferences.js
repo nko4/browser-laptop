@@ -31,6 +31,7 @@ const flash = appConfig.resourceNames.FLASH
 
 const isDarwin = navigator.platform === 'MacIntel'
 const isWindows = navigator.platform && navigator.platform.includes('Win')
+// const lang = navigator.language.split('-')[0].split('_')[0] || 'en'
 
 // TODO: Determine this from the l20n file automatically
 const hintCount = 3
