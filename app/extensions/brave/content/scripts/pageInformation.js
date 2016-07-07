@@ -25,7 +25,9 @@ if (document.location.hostname === 'twitter.com') {
   if (faviconURL) results.faviconURL = faviconURL
 }
 
-if (results.faviconURL.indexOf('//') === 0) results.faviconURL = document.location.protocol + results.faviconURL
+if ((results.faviconURL) && (results.faviconURL.indexOf('//') === 0)) {
+  results.faviconURL = document.location.protocol + results.faviconURL
+}
 
 if (Object.keys(results).length !== 0) {
   results.protocol = document.location.protocol

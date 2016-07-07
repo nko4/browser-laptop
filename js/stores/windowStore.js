@@ -358,6 +358,7 @@ const doAction = (action) => {
       if (closingActive) {
         updateTabPageIndex(FrameStateUtil.getActiveFrame(windowState))
       }
+      ledgerInterop.visit('NOOP')
       break
     case WindowConstants.WINDOW_UNDO_CLOSED_FRAME:
       windowState = windowState.merge(FrameStateUtil.undoCloseFrame(windowState, windowState.get('closedFrames')))
