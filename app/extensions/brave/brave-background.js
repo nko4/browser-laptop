@@ -1,10 +1,18 @@
-chrome.runtime.onConnect.addListener((port) => {
-  port.onMessage.addListener((msg) => {
-    if (!port.sender || !port.sender.tab || port.sender.id !== chrome.runtime.id)
+{
+  let ledgerPublisherConfig = {}
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (!sender.tab || sender.tab.incognito || sender.id !== chrome.runtime.id)
       return
 
-    if (msg.type === 'action') {
-      chrome.ipc.send('dispatch-action', JSON.stringify(msg.action))
+    if (msg.type === 'ledger-publisher-config') {
+      sendResponse(ledgerPublisherConfig)
     }
   })
-})
+
+  chrome.ipc.on('background-page-message', (evt, msg) => {
+    if (msg.type === 'ledger-publisher-update') {
+      ledgerPublisherConfig = msg.config
+    }
+  })
+}

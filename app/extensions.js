@@ -1,7 +1,6 @@
 const electron = require('electron')
 const BrowserWindow = electron.BrowserWindow
 const AppStore = require('../js/stores/appStore')
-const appConfig = require('../js/constants/appConfig')
 const config = require('../js/constants/config')
 const { getAppUrl, getExtensionsPath, getIndexHTML } = require('../js/lib/appUrlUtil')
 const { getSetting } = require('../js/settings')
@@ -133,27 +132,34 @@ let defaultExtensions = {
   LastPass: 'hdokiejnpimakedhajhdlcegeplioahd'
 }
 
-let backgroundPage = null
+let backgroundPages = {}
+let onLoadedCallbacks = []
 
-module.exports.sendToTab = (tabId, message) => {
-  if (backgroundPage) {
-    backgroundPage.send('tab-message', tabId, message, [].slice.call(arguments, 2))
+module.exports.onBackgroundPageLoaded = (cb) => {
+  onLoadedCallbacks.push(cb)
+  // run on any existing background pages
+  for (var id in backgroundPages) {
+    backgroundPages[id].send('background-page-message', cb())
   }
 }
 
+const runOnLoadedCallbacks = (webContents) => {
+  onLoadedCallbacks.forEach((cb) => {
+    webContents.send('background-page-message', cb())
+  })
+}
+
 module.exports.init = () => {
-  process.on('background-page-loaded', function (extensionId, backgroundPageWebContents) {
+  process.on('background-page-loaded', function (extensionId, webContents) {
     if (extensionId === config.braveExtensionId) {
-      backgroundPage = backgroundPageWebContents
-      backgroundPage.on('dom-ready', () => {
-        backgroundPage.send('update-state', AppStore.getState().toJS(), appConfig)
-      })
+      backgroundPages[webContents.id] = webContents
+      runOnLoadedCallbacks(webContents)
     }
   })
 
   process.on('background-page-destroyed', function (extensionId, backgroundPageId) {
     if (extensionId === config.braveExtensionId) {
-      backgroundPage = null
+      delete backgroundPages[backgroundPageId]
     }
   })
 
