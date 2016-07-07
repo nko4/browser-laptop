@@ -43,11 +43,11 @@ var topPublishersN = 25
 
 var LedgerPublisher
 var synopsis
-var locations
+var locations = {}
 var publishers
 
-var currentLocation
-var currentTS
+var currentLocation = 'NOOP'
+var currentTS = 0
 
 var returnValue = {
   enabled: false,
@@ -142,9 +142,11 @@ var init = () => {
     } catch (ex) {
       console.log('synopsisPath parse error: ' + ex.toString())
     }
+    underscore.keys(synopsis.publishers).forEach((publisher) => {
+      if (synopsis.publishers[publisher].faviconURL === null) delete synopsis.publishers[publisher].faviconURL
+    })
 
     fs.readFile(publisherPath, (err, data) => {
-      locations = {}
       publishers = {}
 
       if (err) {
@@ -157,7 +159,7 @@ var init = () => {
         underscore.keys(publishers).sort().forEach((publisher) => {
           var entries = publishers[publisher]
 
-          entries.forEach((entry) => { locations[entry.location] = true })
+          entries.forEach((entry) => { locations[entry.location] = entry })
         })
       } catch (ex) {
         console.log('publishersPath parse error: ' + ex.toString())
@@ -249,7 +251,7 @@ var run = (delayTime) => {
 
   if (client.isReadyToReconcile()) return client.reconcile(synopsis.topN(topPublishersN), callback)
 
-  console.log('\nwhat? wait.')
+  console.log('\nwhat? wait, how can this happen?')
 }
 
 var synopsisNormalizer = () => {
@@ -277,7 +279,10 @@ var synopsisNormalizer = () => {
                  daysSpent: 0, hoursSpent: 0, minutesSpent: 0, secondsSpent: 0,
                  faviconURL: publisher.faviconURL
                }
-    if (results[i].method) data[i].publisherURL = results[i].method + '://' + results[i].publisher
+    if (results[i].protocol) data[i].publisherURL = results[i].protocol + '//' + results[i].publisher
+    // TBD: temporary
+    if (!data[i].publisherURL) data[i].publisherURL = 'http://' + results[i].publisher
+
     pct[i] = Math.round((results[i].score * 100) / total)
 
     if (duration >= msecs.day) {
@@ -374,87 +379,91 @@ var triggerNotice = () => {
   console.log('ledger notice primed')
 }
 
-var pages = {}
-
 eventStore.addChangeListener(() => {
-  var event = eventStore.getState().toJS()
-  var info = event.page_info
-  var view = event.page_view
+  var info = eventStore.getState().toJS().page_info
 
-  if ((!util.isArray(view)) || (view.length === 0) || (!view[0].url) || (Object.keys(info) === 0)) return
+  if (!util.isArray(info)) return
 
-  pages[view[0].url] = info
-  console.log('\npages=' + JSON.stringify(pages, null, 2))
-})
+  info.forEach((page) => {
+    var entry, faviconURL, publisher
+    var location = page.url
 
-module.exports.handleLedgerVisit = (event, location) => {
-  var i, publisher
+    console.log('\npage=' + JSON.stringify(page, null, 2))
+    if ((!synopsis) || ((locations[location]) && (locations[location].publisher))) return
 
-  if ((!synopsis) || (!location)) return
-
-  if ((locations) && (!locations[location])) {
-    locations[location] = true
-
-    try {
-      publisher = LedgerPublisher.getPublisher(location)
-      if (publisher) {
-        if (!publishers[publisher]) publishers[publisher] = []
-        publishers[publisher].push({ when: underscore.now(), location: location })
-
-        publisherNormalizer()
-        delete returnValue.publishers
+    if (!page.publisher) {
+      try {
+        publisher = LedgerPublisher.getPublisher(location)
+        if (publisher) page.publisher = publisher
+      } catch (ex) {
+        console.log('getPublisher error for ' + location + ': ' + ex.toString())
       }
-    } catch (ex) {
-      console.log('getPublisher error: ' + ex.toString())
     }
-  }
+    locations[location] = underscore.omit(page, [ 'url' ])
+    if (!page.publisher) return
 
-  // If the location has changed and we have a previous timestamp
-  if (location !== currentLocation && !(currentLocation || '').match(/^about/) && currentTS) {
-    console.log('\naddVisit ' + currentLocation + ' for ' + moment.duration((new Date()).getTime() - currentTS).humanize())
+    synopsis.initPublisher(publisher)
+    entry = synopsis.publishers[publisher]
+    if ((page.protocol) && (!entry.protocol)) entry.protocol = page.protocol
 
-// TBD: may need to have markup available...
-    publisher = synopsis.addVisit(currentLocation, (new Date()).getTime() - currentTS)
-    if (publisher) {
-      i = location.indexOf(':/')
-      if ((i > 0) && (!synopsis.publishers[publisher].method)) synopsis.publishers[publisher].method = location.substr(0, i)
-/* TBD: should look for:
+    if ((typeof entry.faviconURL === 'undefined') && ((page.faviconURL) || (entry.protocol))) {
+      faviconURL = page.faviconURL || entry.protocol + '://' + publisher + '/favicon.ico'
+      entry.faviconURL = null
 
-        <link rel='icon' href='...' />
-        <link rel='shortcut icon' href='...' />
- */
-      if ((publisher.indexOf('/') === -1) && (typeof synopsis.publishers[publisher].faviconURL === 'undefined') &&
-          (synopsis.publishers[publisher].method)) {
-/*
-        console.log('request: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico')
- */
-        synopsis.publishers[publisher].faviconURL = null
-        request.request({ url: synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico',
-                          responseType: 'blob' }, (err, response, blob) => {
-/*
-          console.log('\nresponse: ' + synopsis.publishers[publisher].method + '://' + publisher + '/favicon.ico' +
-                      ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
- */
-          if (err) return console.log('response error: ' + err.toString())
-          if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
+      console.log('request: ' + faviconURL)
+      request.request({ url: faviconURL, responseType: 'blob' }, (err, response, blob) => {
+        console.log('\nresponse: ' + faviconURL +
+                    ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
+        if (err) return console.log('response error: ' + err.toString())
+        if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
 
-          synopsis.publishers[publisher].faviconURL = blob
-          syncWriter(synopsisPath, synopsis, () => {})
-        })
-      }
+        entry.faviconURL = blob
+        syncWriter(synopsisPath, synopsis, () => {})
+        console.log('\npublisher synopsis=' + JSON.stringify(entry, null, 2))
+      })
 
       syncWriter(synopsisPath, synopsis, () => {})
       delete returnValue.synopsis
     }
+  })
+})
+
+module.exports.handleLedgerVisit = (event, location) => {
+  var now = underscore.now()
+
+  var setLocation = () => {
+    var duration, publisher
+
+    if ((!synopsis) || (currentLocation === 'NOOP')) return
+
+    console.log('locations[' + currentLocation + ']=' + JSON.stringify(locations[currentLocation], null, 2))
+    if (!locations[currentLocation]) return
+
+    publisher = locations[currentLocation].publisher
+    if (!publisher) return
+
+    if (!publishers[publisher]) publishers[publisher] = []
+    publishers[publisher].push({ location: currentLocation, when: currentTS })
+
+    publisherNormalizer()
+    delete returnValue.publishers
+
+    if ((location === currentLocation) || (!currentTS)) return
+
+    duration = now - currentTS
+    console.log('addVisit ' + currentLocation + ' for ' + moment.duration(duration).humanize())
+    synopsis.addPublisher(publisher, duration)
   }
-  // record the new current location and timestamp
-  currentLocation = location
-  currentTS = (new Date()).getTime()
+
+  console.log('\nnew location: ' + location)
+  setLocation()
+  currentLocation = location.match(/^about/) ? 'NOOP' : location
+  currentTS = now
 }
 
 var handleLedgerReset = (event) => {
   currentLocation = null
-  currentTS = (new Date()).getTime()
+  currentTS = underscore.now()
 }
 
 var handleGeneralCommunication = (event) => {

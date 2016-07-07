@@ -18,6 +18,7 @@ var ExtensionActions = {
    * @param {object} publisherInfo - The publisher identification data
    */
   setPageInfo: function (location, pageInfo) {
+    pageInfo.url = location
     ExtensionActions.dispatchAction({
       actionType: 'event-set-page-info',
       location,

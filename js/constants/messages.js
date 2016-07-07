@@ -137,7 +137,6 @@ const messages = {
   TEMPORARY_ALLOW_SCRIPTS: _, /** @arg {string} origin to allow scripts on */
   // Ledger
   LEDGER_VISIT: _,
-  LEDGER_RESET: _,
   LEDGER_GENERAL_COMMUNICATION: _,
   LEDGER_UPDATED: _
 }

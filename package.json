@@ -76,7 +76,7 @@
     "immutablepatch": "^0.2.2",
     "keytar": "^3.0.0",
     "ledger-client": "https://github.com/brave/ledger-client.git",
-    "ledger-publisher": "^0.8.7",
+    "ledger-publisher": "^0.8.20",
     "lru_cache": "^1.0.0",
     "moment": "^2.13.0",
     "random-lib": "2.1.0",

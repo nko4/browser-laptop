@@ -10,11 +10,6 @@ module.exports.visit = (location) => {
   ipc.send(messages.LEDGER_VISIT, location)
 }
 
-// Send message to main process indicating a loss-of-focus, etc.
-module.exports.reset = () => {
-  ipc.send(messages.LEDGER_RESET)
-}
-
 // Retrieve the history from the main process
 module.exports.generalCommunications = () => {
   return ipc.sendSync(messages.LEDGER_GENERAL_COMMUNICATION)

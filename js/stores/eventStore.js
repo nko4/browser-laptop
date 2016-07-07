@@ -12,7 +12,7 @@ const { isSourceAboutUrl } = require('../lib/appUrlUtil')
 let eventState = Immutable.fromJS({
   page_load: [],
   page_view: [],
-  page_info: {}
+  page_info: []
 })
 
 const CHANGE_EVENT = 'change'
@@ -68,7 +68,8 @@ const doAction = (action) => {
       lastActivePageUrl = action.frameProps.get('src')
       break
     case 'event-set-page-info':
-      eventState = eventState.set('page_info', action.pageInfo)
+      // retains all past pages, not really sure that's needed...
+      eventState = eventState.set('page_info', eventState.get('page_info').push(action.pageInfo))
       break
     default:
   }
