@@ -195,8 +195,7 @@ const doAction = (action) => {
       }
 
       // Record visit in the ledger
-      ledgerInterop.visit(action.location)
-
+      ledgerInterop.visit(action.location, action.actionType)
       break
     case WindowConstants.WINDOW_SET_NAVIGATED:
       action.location = action.location.trim()
@@ -205,7 +204,8 @@ const doAction = (action) => {
       action.location = getSourceAboutUrl(action.location) || action.location
 
       // Record visit in the ledger
-      ledgerInterop.visit(action.location)
+      // TBD: shouldn't call if the tab is opened in the background [MTR]
+      ledgerInterop.visit(action.location, action.actionType)
 
       if (UrlUtil.isURL(action.location)) {
         action.location = UrlUtil.getUrlFromInput(action.location)
@@ -357,8 +357,8 @@ const doAction = (action) => {
         frameProps.get('key')))
       if (closingActive) {
         updateTabPageIndex(FrameStateUtil.getActiveFrame(windowState))
+        ledgerInterop.visit('NOOP', action.actionType)
       }
-      ledgerInterop.visit('NOOP')
       break
     case WindowConstants.WINDOW_UNDO_CLOSED_FRAME:
       windowState = windowState.merge(FrameStateUtil.undoCloseFrame(windowState, windowState.get('closedFrames')))
@@ -377,7 +377,7 @@ const doAction = (action) => {
       var loc = windowState.toJS().frames.filter((frame) => frame.key === action.frameProps.get('key'))[0].location
       if (loc) {
         // Record visit in the ledger
-        ledgerInterop.visit(loc)
+        ledgerInterop.visit(loc, action.actionType)
       } else {
         console.log("Failed to determine location from frame. (Shouldn't happen)")
       }

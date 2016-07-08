@@ -4,6 +4,7 @@
 
 if (window.top === window.self) {
   let results = { protocol: document.location.protocol }
+// require('../../../../../js/constants/messages.js').LEDGER_PUBLISHER == 'ledger-publisher' [MTR]
 //let rules = chrome.ipc.sendSync('ledger-publisher')
 
   let node = document.head.querySelector("link[rel='icon']")

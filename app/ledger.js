@@ -49,7 +49,7 @@ var locations = {}
 var publishers
 
 var currentLocation = 'NOOP'
-var currentTS = 0
+var currentTS = underscore.now()
 
 var returnValue = {
   enabled: false,
@@ -432,9 +432,11 @@ eventStore.addChangeListener(() => {
         request.request({ url: url, responseType: 'blob' }, (err, response, blob) => {
           var prefix, tail
 
+/*
           console.log('\nresponse: ' + url +
                       ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\nresponse=' +
                       JSON.stringify(response, null, 2))
+ */
 
           if (err) return console.log('response error: ' + err.toString() + '\n' + err.stack)
 
@@ -462,9 +464,9 @@ eventStore.addChangeListener(() => {
 
           entry.faviconURL = blob
           syncWriter(synopsisPath, synopsis, () => {})
-          console.log('\npublisher synopsis=' + JSON.stringify(underscore.extend(underscore.omit(entry, [ 'faviconURL' ]),
-                                                                                 { faviconURL: entry.faviconURL && '... ' }),
-                                                               null, 2))
+          console.log('\n' + publisher + ' synopsis=' +
+                      JSON.stringify(underscore.extend(underscore.omit(entry, [ 'faviconURL' ]),
+                                                       { faviconURL: entry.faviconURL && '... ' }), null, 2))
         })
       }
 
@@ -484,7 +486,7 @@ var handleLedgerPublisher = (event) => {
   event.returnValue = (event.sender.session !== session.fromPartition('default')) ? LedgerPublisher.rules : []
 }
 
-module.exports.handleLedgerVisit = (event, location) => {
+module.exports.handleLedgerVisit = (event, location, reason) => {
   var now = underscore.now()
 
   var setLocation = () => {
@@ -504,15 +506,16 @@ module.exports.handleLedgerVisit = (event, location) => {
     publisherNormalizer()
     delete returnValue.publishers
 
-    if ((location === currentLocation) || (!currentTS)) return
+    if (location === currentLocation) return true
 
     duration = now - currentTS
     console.log('addVisit ' + currentLocation + ' for ' + moment.duration(duration).humanize())
     synopsis.addPublisher(publisher, duration)
   }
 
-  console.log('\nnew location: ' + location)
-  setLocation()
+  console.log('\n' + (location === currentLocation ? 'same' : 'new') + ' location: ' + location + ' reason: ' + reason)
+  if (setLocation()) return
+
   currentLocation = location.match(/^about/) ? 'NOOP' : location
   currentTS = now
 }
