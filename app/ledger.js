@@ -445,7 +445,7 @@ eventStore.addChangeListener(() => {
             return
           }
 
-          if (response.statusCode !== 200) return
+          if ((response.statusCode !== 200) || (response.headers['content-length'] === '0')) return
 
           if (blob.indexOf('data:image/') !== 0) {
             // NB: for some reason, some sites return an image, but with the wrong content-type...
