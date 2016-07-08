@@ -219,6 +219,8 @@ class Main extends ImmutableComponent {
     })
 
     ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers, responseType) => {
+// TBD: this is _never_ invoked, and i can't figure out why! [MTR]
+      console.log('XHR: nonce=' + nonce)
       const xhr = new window.XMLHttpRequest()
 
       xhr.open('GET', url)
@@ -228,6 +230,12 @@ class Main extends ImmutableComponent {
         }
       }
       xhr.responseType = responseType || 'text'
+      xhr.onerror = () => {
+        var oops = 'xhr: target='
+        try { oops += this.target.toString() } catch (ex) { oops += '[' + ex.toString() + ']' }
+        oops += ' type=' + this.type
+        ipc.send(messages.GOT_XHR_RESPONSE + nonce, new Error(oops))
+      }
       xhr.onload = () => {
         var done, f
         var response = {}
@@ -242,7 +250,7 @@ class Main extends ImmutableComponent {
           if (i > 0) response.headers[header.substring(0, i).toLowerCase()] = header.substring(i + 2)
         })
 
-        done = (result) => { ipc.send(messages.GOT_XHR_RESPONSE + nonce, null, response, result) }
+        done = (err, result) => { ipc.send(messages.GOT_XHR_RESPONSE + nonce, err, response, result) }
 
         f = {
           arraybuffer: () => {
@@ -251,23 +259,25 @@ class Main extends ImmutableComponent {
             var view = new Uint8Array(ab)
 
             for (let i = 0; i < buffer.length; i++) buffer[i] = view[i]
-            done(buffer)
+            done(null, buffer)
           },
 
           blob: () => {
             var reader = new window.FileReader()
 
             reader.readAsDataURL(xhr.response)
-            reader.onloadend = () => { done(reader.result) }
+            reader.onloadend = () => { done(null, reader.result) }
           },
 
-          document: () => { done(xhr.responseXML) },
+          document: () => { done(null, xhr.responseXML) },
 
-          text: () => { done(xhr.responseText) }
-        }[responseType] || (() => { done(xhr.response) })
-        f()
+          text: () => { done(null, xhr.responseText) }
+        }[responseType] || (() => { done(null, xhr.response) })
+
+        try { f() } catch (ex) { done(ex) }
       }
-      xhr.send()
+
+      try { xhr.send() } catch (ex) { ipc.send(messages.GOT_XHR_RESPONSE + nonce, ex) }
     })
 
     ipc.on(messages.SHORTCUT_NEW_FRAME, (event, url, options = {}) => {

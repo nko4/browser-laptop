@@ -26,7 +26,52 @@ var nonce = 0
  * @param {function} callback - callback to call with the response metadata and
  *   body
  */
+
+// NB: the call to webContents.send never results in a call to the listener ../components/main.js [MTR]
+const http = require('http')
+const https = require('https')
+const url = require('url')
+
 module.exports.request = (options, callback) => {
+  var client, parts
+
+  if (typeof options === 'string') options = { url: options }
+  parts = url.parse(options.url)
+  parts.method = 'GET'
+
+  client = parts.protocol === 'https:' ? https : http
+  client.request(parts, (response) => {
+    var chunks = []
+    var responseType = options.responseType || 'text'
+
+    response.on('data', (chunk) => {
+      if (!Buffer.isBuffer(chunk)) chunk = new Buffer(chunk, responseType !== 'text' ? 'binary' : 'utf8')
+
+      chunks.push(chunk)
+    }).on('end', () => {
+      var rsp = { statusCode: response.statusCode, headers: response.headers }
+
+      var done = (err, result) => { callback(err, rsp, result) }
+
+      var f = {
+        arraybuffer: () => { done(null, Buffer.concat(chunks)) },
+
+        blob: () => {
+          done(null, 'data:' + rsp.headers['content-type'] + ';base64,' + Buffer.concat(chunks).toString('base64'))
+        },
+
+        text: () => { done(null, Buffer.concat(chunks).toString('utf8')) }
+      }[responseType] || (() => { done(null, Buffer.concat(chunks).toString('binary')) })
+
+      try { f() } catch (ex) { done(ex) }
+    }).setEncoding('binary')
+  }).on('error', (err) => {
+    callback(err)
+  }).end()
+
+/*
+// TBD: see note above [MTR]
+
   const webContents = getWebContents()
 
   if (!webContents) {
@@ -34,12 +79,18 @@ module.exports.request = (options, callback) => {
   } else {
     // Send a message to the main webcontents to make an XHR to the URL
     nonce++
-    if (typeof options === 'string') options = { url: options }
-    webContents.send(messages.SEND_XHR_REQUEST, options.url, nonce, null, options.responseType)
-    ipcMain.once(messages.GOT_XHR_RESPONSE + nonce, (wnd, err, response, body) => {
-      callback(err, response, body)
-    })
+    try {
+      ipcMain.once(messages.GOT_XHR_RESPONSE + nonce, (wnd, err, response, body) => {
+        callback(err, response, body)
+      })
+
+      if (typeof options === 'string') options = { url: options }
+      webContents.send(messages.SEND_XHR_REQUEST, options.url, nonce, null, options.responseType)
+    } catch (ex) {
+      callback(ex)
+    }
   }
+ */
 }
 
 module.exports.requestDataFile = (url, headers, path, reject, resolve) => {

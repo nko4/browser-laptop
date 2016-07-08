@@ -10,6 +10,8 @@ const util = require('util')
 
 const electron = require('electron')
 const app = electron.app
+const session = electron.session
+
 const moment = require('moment')
 var qr = require('qr-image')
 var random = require('random-lib')
@@ -19,17 +21,17 @@ const messages = require('../js/constants/messages')
 const request = require('../js/lib/request')
 const eventStore = require('../js/stores/eventStore')
 
-// TBD: remove this post alpha
+// TBD: remove this post alpha [MTR]
 const alphaPath = path.join(app.getPath('userData'), 'ledger-alpha.json')
 
-// TBD: remove these post beta
+// TBD: remove these post beta [MTR]
 const logPath = path.join(app.getPath('userData'), 'ledger-log.json')
 const publisherPath = path.join(app.getPath('userData'), 'ledger-publisher.json')
 
-// TBD: move this into appStore.getState().get(‘ledger.client’)
+// TBD: move this into appStore.getState().get(‘ledger.client’) [MTR]
 const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
 
-// TBD: move this into appStore.getState().get(‘publishers.synopsis’)
+// TBD: move this into appStore.getState().get(‘publishers.synopsis’) [MTR]
 const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
 
 var msecs = { day: 24 * 60 * 60 * 1000,
@@ -280,7 +282,7 @@ var synopsisNormalizer = () => {
                  faviconURL: publisher.faviconURL
                }
     if (results[i].protocol) data[i].publisherURL = results[i].protocol + '//' + results[i].publisher
-    // TBD: temporary
+    // TBD: temporary?!? [MTR]
     if (!data[i].publisherURL) data[i].publisherURL = 'http://' + results[i].publisher
 
     pct[i] = Math.round((results[i].score * 100) / total)
@@ -350,13 +352,14 @@ var cacheReturnValue = () => {
   cache = returnValue._internal.cache
 
   paymentURL = 'bitcoin:' + info.address + '?amount=' + info.btc + '&label=' + encodeURI('Brave Software')
-  // TBD: TEMPORARY UNTIL bitcoin: handler works
+  // TBD: TEMPORARY UNTIL bitcoin: handler works [MTR]
   paymentURL = 'https://www.coinbase.com/checkouts/9dccf22649d8dd6300259d66fef44a4e'
   if (cache.paymentURL === paymentURL) return
 
   cache.paymentURL = paymentURL
   try {
     chunks = []
+
     qr.image(paymentURL, { type: 'png' }).on('data', (chunk) => { chunks.push(chunk) }).on('end', () => {
       cache.paymentIMG = 'data:image/png;base64,' + Buffer.concat(chunks).toString('base64')
     })
@@ -379,6 +382,20 @@ var triggerNotice = () => {
   console.log('ledger notice primed')
 }
 
+var fileTypes = {
+  bmp: new Buffer([ 0x42, 0x4d ]),
+  gif: new Buffer([ 0x47, 0x49, 0x46, 0x38, [0x37, 0x39], 0x61 ]),
+  ico: new Buffer([ 0x00, 0x00, 0x01, 0x00 ]),
+  jpeg: new Buffer([ 0xff, 0xd8, 0xff ]),
+  png: new Buffer([ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a ])
+}
+
+var signatureMax = 0
+underscore.keys(fileTypes).forEach((fileType) => {
+  if (signatureMax < fileTypes[fileType].length) signatureMax = fileTypes[fileType].length
+})
+signatureMax = Math.ceil(signatureMax * 1.5)
+
 eventStore.addChangeListener(() => {
   var info = eventStore.getState().toJS().page_info
 
@@ -388,8 +405,10 @@ eventStore.addChangeListener(() => {
     var entry, faviconURL, publisher
     var location = page.url
 
+/*
     console.log('\npage=' + JSON.stringify(page, null, 2))
-    if ((!synopsis) || ((locations[location]) && (locations[location].publisher))) return
+ */
+    if ((!synopsis) || (location.match(/^about/)) || ((locations[location]) && (locations[location].publisher))) return
 
     if (!page.publisher) {
       try {
@@ -407,26 +426,63 @@ eventStore.addChangeListener(() => {
     if ((page.protocol) && (!entry.protocol)) entry.protocol = page.protocol
 
     if ((typeof entry.faviconURL === 'undefined') && ((page.faviconURL) || (entry.protocol))) {
-      faviconURL = page.faviconURL || entry.protocol + '://' + publisher + '/favicon.ico'
+      var fetch = (url, redirects) => {
+        if (typeof redirects === 'undefined') redirects = 0
+
+        request.request({ url: url, responseType: 'blob' }, (err, response, blob) => {
+          var prefix, tail
+
+          console.log('\nresponse: ' + url +
+                      ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\nresponse=' +
+                      JSON.stringify(response, null, 2))
+
+          if (err) return console.log('response error: ' + err.toString() + '\n' + err.stack)
+
+          if ((response.statusCode === 301) && (response.headers.location)) {
+            if (redirects < 3) fetch(response.headers.location, redirects++)
+            return
+          }
+
+          if (response.statusCode !== 200) return
+
+          if (blob.indexOf('data:image/') !== 0) {
+            // NB: for some reason, some sites return an image, but with the wrong content-type...
+
+            tail = blob.indexOf(';base64,')
+            if (tail <= 0) return
+
+            prefix = new Buffer(blob.substr(tail + 8, signatureMax), 'base64')
+            underscore.keys(fileTypes).forEach((fileType) => {
+              if ((prefix.length < fileTypes[fileType].length) &&
+                  (fileTypes[fileType].compare(prefix, 0, fileTypes[fileType].length) !== 0)) return
+
+              blob = 'data:image/' + fileType + blob.substr(tail)
+            })
+          }
+
+          entry.faviconURL = blob
+          syncWriter(synopsisPath, synopsis, () => {})
+          console.log('\npublisher synopsis=' + JSON.stringify(underscore.extend(underscore.omit(entry, [ 'faviconURL' ]),
+                                                                                 { faviconURL: entry.faviconURL && '... ' }),
+                                                               null, 2))
+        })
+      }
+
+      faviconURL = page.faviconURL || entry.protocol + '//' + publisher + '/favicon.ico'
       entry.faviconURL = null
 
       console.log('request: ' + faviconURL)
-      request.request({ url: faviconURL, responseType: 'blob' }, (err, response, blob) => {
-        console.log('\nresponse: ' + faviconURL +
-                    ' errP=' + (!!err) + ' blob=' + (blob || '').substr(0, 40) + '\n' + JSON.stringify(response, null, 2))
-        if (err) return console.log('response error: ' + err.toString())
-        if ((response.statusCode !== 200) || (blob.indexOf('data:image/') !== 0)) return
-
-        entry.faviconURL = blob
-        syncWriter(synopsisPath, synopsis, () => {})
-        console.log('\npublisher synopsis=' + JSON.stringify(entry, null, 2))
-      })
+      fetch(faviconURL)
 
       syncWriter(synopsisPath, synopsis, () => {})
       delete returnValue.synopsis
     }
   })
 })
+
+var handleLedgerPublisher = (event) => {
+  event.returnValue = (event.sender.session !== session.fromPartition('default')) ? LedgerPublisher.rules : []
+}
 
 module.exports.handleLedgerVisit = (event, location) => {
   var now = underscore.now()
@@ -459,11 +515,6 @@ module.exports.handleLedgerVisit = (event, location) => {
   setLocation()
   currentLocation = location.match(/^about/) ? 'NOOP' : location
   currentTS = now
-}
-
-var handleLedgerReset = (event) => {
-  currentLocation = null
-  currentTS = underscore.now()
 }
 
 var handleGeneralCommunication = (event) => {
@@ -514,7 +565,7 @@ var handleGeneralCommunication = (event) => {
 const ipc = require('electron').ipcMain
 
 if (ipc) {
+  ipc.on(messages.LEDGER_PUBLISHER, handleLedgerPublisher)
   ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
-  ipc.on(messages.LEDGER_RESET, handleLedgerReset)
   ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, handleGeneralCommunication)
 }
