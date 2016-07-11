@@ -6,15 +6,18 @@
 
 const fs = require('fs')
 const path = require('path')
+const url = require('url')
 const util = require('util')
 
 const electron = require('electron')
 const app = electron.app
 const session = electron.session
 
+const acorn = require('acorn')
 const moment = require('moment')
 var qr = require('qr-image')
 var random = require('random-lib')
+const tldjs = require('tldjs')
 const underscore = require('underscore')
 
 const messages = require('../js/constants/messages')
@@ -60,11 +63,11 @@ var returnValue = {
   _internal: {}
 }
 
-module.exports.init = () => {
-  try { init() } catch (ex) { console.log('initialization failed: ' + ex.toString() + '\n' + ex.stack) }
+var init = () => {
+  try { initialize() } catch (ex) { console.log('initialization failed: ' + ex.toString() + '\n' + ex.stack) }
 }
 
-var init = () => {
+var initialize = () => {
   var LedgerClient
 
   var makeClient = (path, cb) => {
@@ -83,6 +86,10 @@ var init = () => {
       }
     })
   }
+
+  LedgerPublisher = require('ledger-publisher')
+  returnValue._internal.ruleset = { raw: [], cooked: [] }
+  cacheRuleSet(LedgerPublisher.rules)
 
   LedgerClient = require('ledger-client')
   fs.access(statePath, fs.FF_OK, (err) => {
@@ -104,6 +111,7 @@ var init = () => {
           returnValue._internal.triggerID = setTimeout(() => { triggerNotice() },
                                                        state.options.debugP ? (5 * msecs.second) : 5 * msecs.minute)
         }
+        cacheRuleSet(state.ruleset)
         client = LedgerClient(state.personaId, state.options, state)
         if (client.sync(callback) === true) {
           run(random.randomInt({ min: 0, max: (state.options.debugP ? 5 * msecs.second : 10 * msecs.minute) }))
@@ -129,7 +137,6 @@ var init = () => {
     })
   })
 
-  LedgerPublisher = require('ledger-publisher')
   fs.readFile(synopsisPath, (err, data) => {
     console.log('\nstarting up ledger publisher integration')
     synopsis = new (LedgerPublisher.Synopsis)()
@@ -236,6 +243,7 @@ var callback = (err, result, delayTime) => {
   } else {
     returnValue.statusText = 'Initializing'
   }
+  cacheRuleSet(result.ruleset)
 
   syncWriter(statePath, result, () => { run(delayTime) })
 }
@@ -397,6 +405,7 @@ underscore.keys(fileTypes).forEach((fileType) => {
 signatureMax = Math.ceil(signatureMax * 1.5)
 
 eventStore.addChangeListener(() => {
+  var view = eventStore.getState().toJS().page_view
   var info = eventStore.getState().toJS().page_info
 
   if (!util.isArray(info)) return
@@ -405,9 +414,7 @@ eventStore.addChangeListener(() => {
     var entry, faviconURL, publisher
     var location = page.url
 
-/*
     console.log('\npage=' + JSON.stringify(page, null, 2))
- */
     if ((!synopsis) || (location.match(/^about/)) || ((locations[location]) && (locations[location].publisher))) return
 
     if (!page.publisher) {
@@ -480,15 +487,91 @@ eventStore.addChangeListener(() => {
       delete returnValue.synopsis
     }
   })
+
+  if (view.length === 0) return
+  console.log('\nvisit: ' + JSON.stringify(underscore.last(view), null, 2))
+
+  view = underscore.last(view)
+  if ((view.url) && (view.timestamp)) visit(view.url, view.timestamp)
 })
 
-var handleLedgerPublisher = (event) => {
-  event.returnValue = (event.sender.session !== session.fromPartition('default')) ? LedgerPublisher.rules : []
+var cacheRuleSet = (ruleset) => {
+  var stewed
+
+  var prune = function (tree) {
+    var result
+
+    if (util.isArray(tree)) {
+      result = []
+      tree.forEach(function (branch) { result.push(prune(branch)) })
+      return result
+    }
+
+    if (typeof tree !== 'object') return tree
+
+    tree = underscore.omit(tree, [ 'start', 'end', 'raw' ])
+    result = {}
+    underscore.keys(tree).forEach(function (key) { result[key] = prune(tree[key]) })
+    return result
+  }
+
+  if ((!ruleset) || (underscore.isEqual(returnValue._internal.ruleset.raw, ruleset))) return
+
+  try {
+    stewed = []
+    ruleset.forEach((rule) => {
+      var entry = { condition: acorn.parse(rule.condition) }
+
+      if (rule.dom) {
+        if (rule.dom.publisher) {
+          entry.publisher = { selector: rule.dom.publisher.nodeSelector,
+                              consequent: acorn.parse(rule.dom.publisher.consequent)
+                            }
+        }
+        if (rule.dom.faviconURL) {
+          entry.faviconURL = { selector: rule.dom.faviconURL.nodeSelector,
+                               consequent: acorn.parse(rule.dom.faviconURL.consequent)
+                             }
+        }
+      }
+      if (!entry.publisher) entry.consequent = rule.consequent ? acorn.parse(rule.consequent) : rule.consequent
+
+      stewed.push(entry)
+    })
+
+    returnValue._internal.ruleset.raw = ruleset
+    returnValue._internal.ruleset.cooked = stewed
+  } catch (ex) {
+    console.log('ruleset error: ' + ex.toString() + '\n' + ex.stack)
+  }
 }
 
-module.exports.handleLedgerVisit = (event, location, reason) => {
-  var now = underscore.now()
+var handleLedgerPublisher = (event, location) => {
+  var ctx
 
+  if ((event.sender.session === session.fromPartition('default')) || (!tldjs.isValid(location))) {
+    event.returnValue = {}
+    return
+  }
+
+  ctx = url.parse(location, true)
+  ctx.TLD = tldjs.getPublicSuffix(ctx.host)
+  if (!ctx.TLD) {
+    console.log('no TLD for:' + ctx.host)
+    event.returnValue = {}
+    return
+  }
+
+  ctx = underscore.mapObject(ctx, function (value, key) { if (!underscore.isFunction(value)) return value })
+  ctx.URL = location
+  ctx.SLD = tldjs.getDomain(ctx.host)
+  ctx.RLD = tldjs.getSubdomain(ctx.host)
+  ctx.QLD = ctx.RLD ? underscore.last(ctx.RLD.split('.')) : ''
+
+  event.returnValue = { context: ctx, rules: returnValue._internal.ruleset.cooked }
+}
+
+var visit = (location, timestamp) => {
   var setLocation = () => {
     var duration, publisher
 
@@ -508,16 +591,16 @@ module.exports.handleLedgerVisit = (event, location, reason) => {
 
     if (location === currentLocation) return true
 
-    duration = now - currentTS
+    duration = timestamp - currentTS
     console.log('addVisit ' + currentLocation + ' for ' + moment.duration(duration).humanize())
     synopsis.addPublisher(publisher, duration)
   }
 
-  console.log('\n' + (location === currentLocation ? 'same' : 'new') + ' location: ' + location + ' reason: ' + reason)
+  console.log('\n' + (location === currentLocation ? 'same' : 'new') + ' location: ' + location)
   if (setLocation()) return
 
   currentLocation = location.match(/^about/) ? 'NOOP' : location
-  currentTS = now
+  currentTS = timestamp
 }
 
 var handleGeneralCommunication = (event) => {
@@ -569,6 +652,10 @@ const ipc = require('electron').ipcMain
 
 if (ipc) {
   ipc.on(messages.LEDGER_PUBLISHER, handleLedgerPublisher)
-  ipc.on(messages.LEDGER_VISIT, module.exports.handleLedgerVisit)
   ipc.on(messages.LEDGER_GENERAL_COMMUNICATION, handleGeneralCommunication)
+}
+
+module.exports = {
+  init: init,
+  visit: visit
 }

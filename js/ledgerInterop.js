@@ -5,11 +5,6 @@
 const ipc = global.require('electron').ipcRenderer
 const messages = require('./constants/messages')
 
-// Send message to main process containing the current location
-module.exports.visit = (location, reason) => {
-  ipc.send(messages.LEDGER_VISIT, location, reason)
-}
-
 // Retrieve the history from the main process
 module.exports.generalCommunications = () => {
   return ipc.sendSync(messages.LEDGER_GENERAL_COMMUNICATION)

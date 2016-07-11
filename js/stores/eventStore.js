@@ -2,12 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const AppConstants = require('../constants/appConstants')
 const AppDispatcher = require('../dispatcher/appDispatcher')
+const AppStore = require('./appStore')
 const EventEmitter = require('events').EventEmitter
 const Immutable = require('immutable')
 const WindowConstants = require('../constants/windowConstants')
 const debounce = require('../lib/debounce.js')
 const { isSourceAboutUrl } = require('../lib/appUrlUtil')
+
+const electron = require('electron')
+const BrowserWindow = electron.BrowserWindow
 
 let eventState = Immutable.fromJS({
   page_load: [],
@@ -40,6 +45,38 @@ const emitChanges = debounce(eventStore.emitChanges.bind(eventStore), 5)
 
 let lastActivePageUrl = null
 
+const addPageView = (url) => {
+  if (url && isSourceAboutUrl(url)) {
+    url = null
+  }
+
+  if (lastActivePageUrl === url) {
+    return
+  }
+
+  let pageViewEvent = Immutable.fromJS({
+    timestamp: new Date().getTime(),
+    url
+  })
+  eventState = eventState.set('page_view', eventState.get('page_view').push(pageViewEvent))
+  lastActivePageUrl = url
+}
+
+const windowClosed = (windowId) => {
+  let windowCount = BrowserWindow.getAllWindows().length
+  let win = BrowserWindow.getFocusedWindow()
+  // window may not be closed yet
+  if (windowCount > 0 && win.id === windowId) {
+    win.once('closed', () => {
+      windowClosed(windowId)
+    })
+  }
+
+  if (!win || windowCount === 0) {
+    addPageView(null)
+  }
+}
+
 // Register callback to handle all updates
 const doAction = (action) => {
   switch (action.actionType) {
@@ -55,17 +92,12 @@ const doAction = (action) => {
       eventState = eventState.set('page_load', eventState.get('page_load').push(pageLoadEvent))
       break
     case WindowConstants.WINDOW_SET_FOCUSED_FRAME:
-      if (isSourceAboutUrl(action.frameProps.get('src')) ||
-          lastActivePageUrl === action.frameProps.get('src')) {
-        break
-      }
-
-      let pageViewEvent = Immutable.fromJS({
-        timestamp: new Date().getTime(),
-        url: action.frameProps.get('src')
+      addPageView(action.frameProps.get('src'))
+      break
+    case AppConstants.APP_CLOSE_WINDOW:
+      AppDispatcher.waitFor([AppStore.dispatchToken], () => {
+        windowClosed(action.appWindowId)
       })
-      eventState = eventState.set('page_view', eventState.get('page_view').push(pageViewEvent))
-      lastActivePageUrl = action.frameProps.get('src')
       break
     case 'event-set-page-info':
       // retains all past pages, not really sure that's needed...
