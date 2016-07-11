@@ -17,7 +17,6 @@ const getSetting = require('../settings').getSetting
 const importFromHTML = require('../lib/importer').importFromHTML
 const UrlUtil = require('../lib/urlutil')
 const urlParse = require('url').parse
-const ledgerInterop = require('../ledgerInterop')
 
 const { l10nErrorText } = require('../lib/errorUtil')
 const { aboutUrls, getSourceAboutUrl, isIntermediateAboutPage, navigatableTypes } = require('../lib/appUrlUtil')
@@ -193,19 +192,12 @@ const doAction = (action) => {
         // initiated navigation (bookmarks, etc...)
         updateNavBarInput(action.location, frameStatePath(action.key))
       }
-
-      // Record visit in the ledger
-      ledgerInterop.visit(action.location, action.actionType)
       break
     case WindowConstants.WINDOW_SET_NAVIGATED:
       action.location = action.location.trim()
       // For about: URLs, make sure we store the URL as about:something
       // and not what we map to.
       action.location = getSourceAboutUrl(action.location) || action.location
-
-      // Record visit in the ledger
-      // TBD: shouldn't call if the tab is opened in the background [MTR]
-      ledgerInterop.visit(action.location, action.actionType)
 
       if (UrlUtil.isURL(action.location)) {
         action.location = UrlUtil.getUrlFromInput(action.location)
@@ -357,7 +349,6 @@ const doAction = (action) => {
         frameProps.get('key')))
       if (closingActive) {
         updateTabPageIndex(FrameStateUtil.getActiveFrame(windowState))
-        ledgerInterop.visit('NOOP', action.actionType)
       }
       break
     case WindowConstants.WINDOW_UNDO_CLOSED_FRAME:
@@ -372,16 +363,6 @@ const doAction = (action) => {
         activeFrameKey: action.frameProps.get('key'),
         previewFrameKey: null
       })
-
-      // Ledger integration
-      var loc = windowState.toJS().frames.filter((frame) => frame.key === action.frameProps.get('key'))[0].location
-      if (loc) {
-        // Record visit in the ledger
-        ledgerInterop.visit(loc, action.actionType)
-      } else {
-        console.log("Failed to determine location from frame. (Shouldn't happen)")
-      }
-
       updateTabPageIndex(action.frameProps)
       break
     case WindowConstants.WINDOW_SET_PREVIEW_FRAME:

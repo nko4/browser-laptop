@@ -37,7 +37,8 @@ const statePath = path.join(app.getPath('userData'), 'ledger-state.json')
 // TBD: move this into appStore.getState().get(‘publishers.synopsis’) [MTR]
 const synopsisPath = path.join(app.getPath('userData'), 'ledger-synopsis.json')
 
-var msecs = { day: 24 * 60 * 60 * 1000,
+var msecs = { week: 7 * 24 * 60 * 60 * 1000,
+              day: 24 * 60 * 60 * 1000,
               hour: 60 * 60 * 1000,
               minute: 60 * 1000,
               second: 1000
@@ -49,7 +50,7 @@ var topPublishersN = 25
 var LedgerPublisher
 var synopsis
 var locations = {}
-var publishers
+var publishers = {}
 
 var currentLocation = 'NOOP'
 var currentTS = underscore.now()
@@ -156,19 +157,21 @@ var initialize = () => {
     })
 
     fs.readFile(publisherPath, (err, data) => {
-      publishers = {}
-
       if (err) {
         if (err.code !== 'ENOENT') console.log('publisherPath read error: ' + err.toString())
         return
       }
 
       try {
-        publishers = JSON.parse(data)
-        underscore.keys(publishers).sort().forEach((publisher) => {
-          var entries = publishers[publisher]
+        data = JSON.parse(data)
+        underscore.keys(data).sort().forEach((publisher) => {
+          var entries = data[publisher]
 
-          entries.forEach((entry) => { locations[entry.location] = entry })
+          publishers[publisher] = {}
+          entries.forEach((entry) => {
+            locations[entry.location] = entry
+            publishers[publisher][entry.location] = entry.when
+          })
         })
       } catch (ex) {
         console.log('publishersPath parse error: ' + ex.toString())
@@ -206,7 +209,7 @@ var callback = (err, result, delayTime) => {
   console.log('\nledger client callback: errP=' + (!!err) + ' resultP=' + (!!result) + ' delayTime=' + delayTime)
 
   if (entries) {
-    then = now - (7 * msecs.day)
+    then = now - msecs.week
     logs = logs.concat(entries)
 
     for (i = 0; i < logs.length; i++) if (logs[i].when > then) break
@@ -323,14 +326,15 @@ var synopsisNormalizer = () => {
 
 var publisherNormalizer = () => {
   var data = {}
-  var then = underscore.now() - (7 * msecs.day)
+  var then = underscore.now() - msecs.week
 
   underscore.keys(publishers).sort().forEach((publisher) => {
-    var entries = publishers[publisher]
-    var i
+    var entries = []
 
-    for (i = 0; i < entries.length; i++) if (entries[i].when > then) break
-    if ((i !== 0) && (i !== entries.length)) entries = entries.slice(i)
+    underscore.keys(publishers[publisher]).forEach((location) => {
+      var when = publishers[publisher][location]
+      if (when > then) entries.push({ location: location, when: when })
+    })
 
     if (entries.length > 0) data[publisher] = entries
   })
@@ -405,7 +409,7 @@ underscore.keys(fileTypes).forEach((fileType) => {
 signatureMax = Math.ceil(signatureMax * 1.5)
 
 eventStore.addChangeListener(() => {
-  var view = eventStore.getState().toJS().page_view
+  var view
   var info = eventStore.getState().toJS().page_info
 
   if (!util.isArray(info)) return
@@ -414,7 +418,9 @@ eventStore.addChangeListener(() => {
     var entry, faviconURL, publisher
     var location = page.url
 
+/*
     console.log('\npage=' + JSON.stringify(page, null, 2))
+ */
     if ((!synopsis) || (location.match(/^about/)) || ((locations[location]) && (locations[location].publisher))) return
 
     if (!page.publisher) {
@@ -488,10 +494,9 @@ eventStore.addChangeListener(() => {
     }
   })
 
-  if (view.length === 0) return
-  console.log('\nvisit: ' + JSON.stringify(underscore.last(view), null, 2))
+  if (info.length === 0) return
 
-  view = underscore.last(view)
+  view = underscore.last(info)
   if ((view.url) && (view.timestamp)) visit(view.url, view.timestamp)
 })
 
@@ -583,8 +588,8 @@ var visit = (location, timestamp) => {
     publisher = locations[currentLocation].publisher
     if (!publisher) return
 
-    if (!publishers[publisher]) publishers[publisher] = []
-    publishers[publisher].push({ location: currentLocation, when: currentTS })
+    if (!publishers[publisher]) publishers[publisher] = {}
+    publishers[publisher][currentLocation] = timestamp
 
     publisherNormalizer()
     delete returnValue.publishers

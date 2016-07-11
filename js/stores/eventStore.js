@@ -100,7 +100,7 @@ const doAction = (action) => {
       })
       break
     case 'event-set-page-info':
-      // retains all past pages, not really sure that's needed...
+      // retains all past pages, not really sure that's needed... [MTR]
       eventState = eventState.set('page_info', eventState.get('page_info').push(action.pageInfo))
       break
     default:

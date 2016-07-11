@@ -11,7 +11,7 @@
   var resolve = (tree, context) => {
     var node = tree.body ? tree.body[0] : tree
 
-    var traverse = (expr) => {
+    var traverse = (expr, computed) => {
       var args, op1, op2, value
 
       switch (expr.type) {
@@ -56,11 +56,10 @@
         case 'CallExpression':
           op1 = expr.callee
           if (op1.type !== 'MemberExpression') throw new Error('unexpected callee: ' + op1.type)
-          value = traverse(op1.object)
-          if ((!expr.callee.computed) && (op1.object.type === 'Identifier')) value = context[value]
+          value = traverse(op1.object, op1.computed)
           args = []
           expr['arguments'].forEach((argument) => { args.push(traverse(argument)) })
-          return value[traverse(op1.property)].apply(value, args)
+          return value[traverse(op1.property, true)].apply(value, args)
 
         case 'ConditionalExpression':
           return (traverse(expr.test) ? traverse(expr.consequent) : traverse(expr.alternate))
@@ -78,8 +77,7 @@
           break
 
         case 'MemberExpression':
-          value = traverse(expr.object)
-          if ((!expr.computed) && (expr.object.type === 'Identifier')) value = context[value]
+          value = traverse(expr.object, expr.computed)
           return value[traverse(expr.property)]
 
         case 'UnaryExpression':
@@ -99,7 +97,7 @@
           break
 
         case 'Identifier':
-          return expr.name
+          return (computed ? expr.name : context[expr.name])
 
         case 'Literal':
           return expr.value
@@ -111,19 +109,17 @@
 
     if ((!node) || (node.type !== 'ExpressionStatement')) throw new Error('invalid expression')
 
-    if (node.expression.type === 'Identifier') return context[node.expression.name]
-
     return traverse(node.expression)
   }
 
-  var results = { protocol: document.location.protocol }
+  var results = { timestamp: new Date().getTime(), protocol: document.location.protocol }
 
   var node = document.head.querySelector("link[rel='icon']")
   if (!node) node = document.head.querySelector("link[rel='shortcut icon']")
   if (node) results.faviconURL = node.getAttribute('href')
 
   var pubinfo = chrome.ipc.sendSync('ledger-publisher', document.location.href)
-  if ((!pubinfo) || (!pubinfo.context) || (!pubinfo.rules)) return console.log('NO pubinfo')
+  if ((!pubinfo) || (!pubinfo.context) || (!pubinfo.rules)) return console.log('no pubinfo avaialble')
 
   var context = pubinfo.context
   var rules = pubinfo.rules
@@ -135,11 +131,10 @@
     if (!resolve(rule.condition, context)) continue
 
     if (rule.publisher) {
-      context.node = document.body.queryselector(rule.publisher.selector)
+      context.node = document.body.querySelector(rule.publisher.selector)
       publisher = resolve(rule.publisher.consequent, context)
     } else {
       delete context.node
-console.log('rule[' + i + ']=' + JSON.stringify(rule.consequent,null,2))
       publisher = rule.consequent ? resolve(rule.consequent, context) : rule.consequent
     }
     if (publisher === '') continue
@@ -150,7 +145,7 @@ console.log('rule[' + i + ']=' + JSON.stringify(rule.consequent,null,2))
 
     results.publisher = publisher
     if (rule.faviconURL) {
-      context.node = document.body.queryselector(rule.faviconURL.selector)
+      context.node = document.body.querySelector(rule.faviconURL.selector)
       results.faviconURL = resolve(rule.faviconURL.consequent, context)
     }
     break
@@ -164,6 +159,5 @@ console.log('rule[' + i + ']=' + JSON.stringify(rule.consequent,null,2))
     if (prefix) results.faviconURL = prefix + results.faviconURL
   }
 
-console.log(JSON.stringify(results, null, 2))
   ExtensionActions.setPageInfo(document.location.href, results)
 } catch (ex) { console.log(ex.toString() + '\n' + ex.stack) } })()
