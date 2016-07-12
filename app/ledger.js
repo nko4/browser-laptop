@@ -495,7 +495,8 @@ eventStore.addChangeListener(() => {
     }
   })
 
-  if ((view.url) && (view.timestamp)) visit(view.url, view.timestamp)
+  view = underscore.last(view) || {}
+  visit(view.url || 'NOOP', view.timestamp || underscore.now())
 })
 
 var cacheRuleSet = (ruleset) => {
