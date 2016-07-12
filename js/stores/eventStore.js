@@ -66,7 +66,7 @@ const windowClosed = (windowId) => {
   let windowCount = BrowserWindow.getAllWindows().length
   let win = BrowserWindow.getFocusedWindow()
   // window may not be closed yet
-  if (windowCount > 0 && win.id === windowId) {
+  if (windowCount > 0 && win && win.id === windowId) {
     win.once('closed', () => {
       windowClosed(windowId)
     })
