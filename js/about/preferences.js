@@ -50,6 +50,7 @@ const permissionNames = {
   'pointerLockPermission': 'boolean',
   'fullscreenPermission': 'boolean',
   'openExternalPermission': 'boolean',
+  'protocolRegistrationPermission': 'boolean',
   'flash': 'number'
 }
 
@@ -107,6 +108,7 @@ class SettingCheckbox extends ImmutableComponent {
         onClick={this.props.onChange ? this.props.onChange : changeSetting.bind(null, this.props.onChangeSetting, this.props.prefKey)}
         checkedOn={this.props.checked !== undefined ? this.props.checked : getSetting(this.props.prefKey, this.props.settings)} />
       <label data-l10n-id={this.props.dataL10nId} htmlFor={this.props.prefKey} />
+      {this.props.options}
     </div>
   }
 }
@@ -246,7 +248,8 @@ class GeneralTab extends ImmutableComponent {
           </select>
         </SettingItem>
         <SettingItem dataL10nId='myHomepage'>
-          <input data-l10n-id='homepageInput'
+          <input spellCheck='false'
+            data-l10n-id='homepageInput'
             value={getSetting(settings.HOMEPAGE, this.props.settings)}
             onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.HOMEPAGE)} />
         </SettingItem>
@@ -318,16 +321,26 @@ class SecurityTab extends ImmutableComponent {
   render () {
     return <div>
       <SettingsList dataL10nId='passwordSettings'>
-        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
+          options={
+            getSetting(settings.PASSWORD_MANAGER_ENABLED, this.props.settings)
+              ? <span className='linkText' data-l10n-id='managePasswords'
+                onClick={aboutActions.newFrame.bind(null, {
+                  location: 'about:passwords'
+                }, true)}></span>
+              : null
+          } />
         <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
+          options={
+            getSetting(settings.LAST_PASS_ENABLED, this.props.settings)
+              ? <span className='linkText' data-l10n-id='preferences'
+                onClick={aboutActions.newFrame.bind(null, {
+                  location: 'chrome-extension://hdokiejnpimakedhajhdlcegeplioahd/tabDialog.html?dialog=preferences&cmd=open'
+                }, true)}></span>
+              : null
+          } />
         <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <div classname='settingItem'>
-          <span className='linkText' data-l10n-id='managePasswords'
-            onClick={aboutActions.newFrame.bind(null, {
-              location: 'about:passwords'
-            }, true)}></span>
-        </div>
       </SettingsList>
       <SettingsList dataL10nId='pluginSettings'>
         <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
@@ -477,6 +490,7 @@ class AdvancedTab extends ImmutableComponent {
           </select>
         </SettingItem>
         <SettingCheckbox dataL10nId='useHardwareAcceleration' prefKey={settings.HARDWARE_ACCELERATION_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='usePDFJS' prefKey={settings.PDFJS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
       </SettingsList>
     </div>
   }

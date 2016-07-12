@@ -44,7 +44,7 @@ const settings = require('../js/constants/settings')
 const siteSettings = require('../js/state/siteSettings')
 const spellCheck = require('./spellCheck')
 const ledger = require('./ledger')
-const flash = require('./flash')
+const flash = require('../js/flash')
 const contentSettings = require('../js/state/contentSettings')
 
 // Used to collect the per window state when shutting down the application
@@ -423,17 +423,6 @@ app.on('ready', () => {
     ipcMain.on(messages.CHECK_FLASH_INSTALLED, (e) => {
       flash.checkFlashInstalled((installed) => {
         e.sender.send(messages.FLASH_UPDATED, installed)
-      })
-    })
-
-    ipcMain.on(messages.SHOW_FLASH_INSTALLED_MESSAGE, (e) => {
-      flash.checkFlashInstalled((installed) => {
-        if (installed) {
-          if (BrowserWindow.getFocusedWindow()) {
-            BrowserWindow.getFocusedWindow().webContents.send(messages.SHOW_NOTIFICATION,
-                                                              locale.translation('flashInstalled'))
-          }
-        }
       })
     })
 

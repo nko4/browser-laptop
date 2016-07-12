@@ -10,7 +10,7 @@ const ImmutableComponent = require('./immutableComponent')
 
 const config = require('../constants/config.js')
 const top500 = require('./../data/top500.js')
-const {aboutUrls, isIntermediateAboutPage, isSourceAboutUrl, isUrl} = require('../lib/appUrlUtil')
+const {aboutUrls, isNavigatableAboutPage, isSourceAboutUrl, isUrl} = require('../lib/appUrlUtil')
 const Immutable = require('immutable')
 const debounce = require('../lib/debounce.js')
 const settings = require('../constants/settings')
@@ -67,6 +67,7 @@ class UrlBarSuggestions extends ImmutableComponent {
   clickSelected (e) {
     this.ctrlKey = e.ctrlKey
     this.metaKey = e.metaKey
+    this.shiftKey = e.shiftKey
     ReactDOM.findDOMNode(this).getElementsByClassName('selected')[0].click()
   }
 
@@ -135,7 +136,7 @@ class UrlBarSuggestions extends ImmutableComponent {
             : null
           }
           {
-            suggestion.type !== suggestionTypes.SEARCH
+            suggestion.type !== suggestionTypes.SEARCH && suggestion.type !== suggestionTypes.ABOUT_PAGES
             ? <div className='suggestionLocation'>{suggestion.location}</div>
             : null
           }
@@ -186,15 +187,17 @@ class UrlBarSuggestions extends ImmutableComponent {
       // so remove the meta keys from the real event here.
       e.metaKey = e.metaKey || this.metaKey
       e.ctrlKey = e.ctrlKey || this.ctrlKey
+      e.shiftKey = e.shiftKey || this.shiftKey
       delete this.metaKey
       delete this.ctrlKey
+      delete this.shiftKey
 
       const location = formatUrl(site)
       if (eventUtil.isForSecondaryAction(e)) {
         windowActions.newFrame({
           location,
           partitionNumber: site && site.get && site.get('partitionNumber') || undefined
-        }, false)
+        }, !!e.shiftKey)
         e.preventDefault()
         windowActions.setNavBarFocused(true)
       } else {
@@ -295,7 +298,7 @@ class UrlBarSuggestions extends ImmutableComponent {
 
     // about pages
     suggestions = suggestions.concat(mapListToElements({
-      data: aboutUrls.keySeq().filter((x) => !isIntermediateAboutPage(x)),
+      data: aboutUrls.keySeq().filter((x) => isNavigatableAboutPage(x)),
       maxResults: config.urlBarSuggestions.maxAboutPages,
       type: suggestionTypes.ABOUT_PAGES,
       clickHandler: navigateClickHandler((x) => x)}))

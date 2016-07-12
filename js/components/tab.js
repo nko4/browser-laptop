@@ -10,6 +10,7 @@ const windowActions = require('../actions/windowActions')
 const dragTypes = require('../constants/dragTypes')
 const cx = require('../lib/classSet.js')
 const {getTextColorForBackground} = require('../lib/color')
+const {isIntermediateAboutPage} = require('../lib/appUrlUtil')
 
 const contextMenus = require('../contextMenus')
 const dnd = require('../dnd')
@@ -22,6 +23,15 @@ class Tab extends ImmutableComponent {
   get draggingOverData () {
     if (!this.props.draggingOverData ||
         this.props.draggingOverData.get('dragOverKey') !== this.props.frameProps.get('key')) {
+      return
+    }
+
+    const sourceDragData = dnd.getInProcessDragData()
+    const location = sourceDragData.get('location')
+    const key = this.props.draggingOverData.get('dragOverKey')
+    const draggingOverFrame = this.props.frames.get(key)
+    if ((location === 'about:blank' || location === 'about:newtab' || isIntermediateAboutPage(location)) &&
+        (draggingOverFrame && draggingOverFrame.get('pinnedLocation'))) {
       return
     }
 
@@ -76,7 +86,8 @@ class Tab extends ImmutableComponent {
     windowActions.closeFrame(this.props.frames, this.props.frameProps)
   }
 
-  onMuteFrame (muted) {
+  onMuteFrame (muted, event) {
+    event.stopPropagation()
     windowActions.setAudioMuted(this.props.frameProps, muted)
   }
 

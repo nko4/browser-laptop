@@ -1,7 +1,6 @@
 const electron = require('electron')
 const BrowserWindow = electron.BrowserWindow
 const AppStore = require('../js/stores/appStore')
-const appConfig = require('../js/constants/appConfig')
 const config = require('../js/constants/config')
 const { getAppUrl, getExtensionsPath, getIndexHTML } = require('../js/lib/appUrlUtil')
 const { getSetting } = require('../js/settings')
@@ -28,8 +27,10 @@ let generateBraveManifest = () => {
         js: [
           'content/scripts/util.js',
           'js/actions/extensionActions.js',
+          'content/scripts/navigator.js',
           'content/scripts/blockFlash.js',
           'content/scripts/blockCanvasFingerprinting.js',
+          'content/scripts/block3rdPartyContent.js',
           'content/scripts/inputHandler.js',
           'content/scripts/spellCheck.js'
         ],
@@ -77,14 +78,18 @@ let generateBraveManifest = () => {
         exclude_globs: [
           getAppUrl('about-blank.html')
         ]
+      },
+      {
+        run_at: 'document_start',
+        all_frames: true,
+        js: [
+          'content/scripts/brave-about-flash.js'
+        ],
+        matches: [
+          '<all_urls>'
+        ]
       }
     ],
-    background: {
-      scripts: [
-        'content/scripts/util.js',
-        'brave-background.js'
-      ]
-    },
     permissions: [
       'externally_connectable.all_urls', 'tabs', '<all_urls>', 'contentSettings'
     ],
@@ -128,35 +133,13 @@ let generateBraveManifest = () => {
 }
 
 let defaultExtensions = {
+  PDFJS: 'oemmndcbldboiebfnladdacbdfmadadm',
   OnePassword: 'aomjjhallfgjeglblehebfpbcfeobpgk',
   Dashlane: 'fdjamakpfbbddfjaooikfcpapjohcfmg',
   LastPass: 'hdokiejnpimakedhajhdlcegeplioahd'
 }
 
-let backgroundPage = null
-
-module.exports.sendToTab = (tabId, message) => {
-  if (backgroundPage) {
-    backgroundPage.send('tab-message', tabId, message, [].slice.call(arguments, 2))
-  }
-}
-
 module.exports.init = () => {
-  process.on('background-page-loaded', function (extensionId, backgroundPageWebContents) {
-    if (extensionId === config.braveExtensionId) {
-      backgroundPage = backgroundPageWebContents
-      backgroundPage.on('dom-ready', () => {
-        backgroundPage.send('update-state', AppStore.getState().toJS(), appConfig)
-      })
-    }
-  })
-
-  process.on('background-page-destroyed', function (extensionId, backgroundPageId) {
-    if (extensionId === config.braveExtensionId) {
-      backgroundPage = null
-    }
-  })
-
   process.on('chrome-browser-action-popup', function (extensionId, tabId, name, props, popup) {
     // TODO(bridiver) find window from tabId
     let win = BrowserWindow.getFocusedWindow()
@@ -197,6 +180,13 @@ module.exports.init = () => {
 
   let enableExtensions = () => {
     installExtension(config.braveExtensionId, getExtensionsPath('brave'), {manifest_location: 'component', manifest: generateBraveManifest()})
+
+    if (getSetting(settings.PDFJS_ENABLED)) {
+      installExtension(defaultExtensions.PDFJS, getExtensionsPath('pdfjs'))
+      enableExtension(defaultExtensions.PDFJS)
+    } else {
+      disableExtension(defaultExtensions.PDFJS)
+    }
 
     if (getSetting(settings.ONE_PASSWORD_ENABLED)) {
       installExtension(defaultExtensions.OnePassword, getExtensionsPath('1password'))

@@ -22,6 +22,7 @@ class AddEditBookmark extends ImmutableComponent {
     this.onClose = this.onClose.bind(this)
     this.onClick = this.onClick.bind(this)
     this.onSave = this.onSave.bind(this)
+    this.onRemoveBookmark = this.onRemoveBookmark.bind(this)
   }
   get isBlankTab () {
     return ['about:blank', 'about:newtab'].includes(this.props.currentDetail.get('location'))
@@ -82,6 +83,10 @@ class AddEditBookmark extends ImmutableComponent {
     appActions.addSite(this.props.currentDetail, tag, this.props.originalDetail, this.props.destinationDetail)
     this.onClose()
   }
+  onRemoveBookmark () {
+    appActions.removeSite(this.props.currentDetail, siteTags.BOOKMARK)
+    this.onClose()
+  }
   get displayBookmarkName () {
     if (this.props.currentDetail.get('customTitle') !== undefined) {
       return this.props.currentDetail.get('customTitle')
@@ -94,13 +99,13 @@ class AddEditBookmark extends ImmutableComponent {
         <div className='genericFormTable'>
           <div id='bookmarkName' className='formRow'>
             <label data-l10n-id='nameField' htmlFor='bookmarkName' />
-            <input onKeyDown={this.onKeyDown} onChange={this.onNameChange} value={this.displayBookmarkName} ref={(bookmarkName) => { this.bookmarkName = bookmarkName }} />
+            <input spellCheck='false' onKeyDown={this.onKeyDown} onChange={this.onNameChange} value={this.displayBookmarkName} ref={(bookmarkName) => { this.bookmarkName = bookmarkName }} />
           </div>
           {
             !this.isFolder
             ? <div id='bookmarkLocation' className='formRow'>
               <label data-l10n-id='locationField' htmlFor='bookmarkLocation' />
-              <input onKeyDown={this.onKeyDown} onChange={this.onLocationChange} value={this.props.currentDetail.get('location')} />
+              <input spellCheck='false' onKeyDown={this.onKeyDown} onChange={this.onLocationChange} value={this.props.currentDetail.get('location')} />
             </div>
             : null
           }
@@ -115,6 +120,11 @@ class AddEditBookmark extends ImmutableComponent {
             </select>
           </div>
           <div className='formRow'>
+            {
+              this.props.originalDetail
+              ? <a data-l10n-id='delete' className='removeBookmarkLink link' onClick={this.onRemoveBookmark} />
+              : null
+            }
             <Button l10nId='save' className='primaryButton' onClick={this.onSave} />
           </div>
         </div>

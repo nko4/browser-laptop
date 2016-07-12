@@ -105,6 +105,21 @@ describe('Bravery Panel', function () {
         .tabByIndex(0)
         .loadUrl(url)
         .url(url)
+        .windowByUrl(Brave.browserWindowUrl)
+        .waitForVisible(braveMenu)
+        .waitForVisible(braveryPanel)
+        .waitUntil(function () {
+          return this.getText(fpStat)
+            .then((stat) => stat === '3')
+        })
+    })
+    it('allows fingerprinting when setting is off', function * () {
+      const url = Brave.server.url('fingerprinting.html')
+      yield this.app.client
+        .click(fpSwitch)
+        .tabByIndex(0)
+        .loadUrl(url)
+        .url(url)
         .waitUntil(function () {
           return this.getText('body')
             .then((text) => text === 'fingerprinting test')
@@ -114,28 +129,8 @@ describe('Bravery Panel', function () {
         .waitForVisible(braveryPanel)
         .waitUntil(function () {
           return this.getText(fpStat)
-            .then((stat) => stat === '3')
-        })
-        .click(fpSwitch)
-    })
-    it('allows fingerprinting when setting is off', function * () {
-      const url = Brave.server.url('fingerprinting.html')
-      yield this.app.client
-        .tabByIndex(0)
-        .loadUrl(url)
-        .url(url)
-        .waitUntil(function () {
-          return this.getText('body')
-            .then((text) => text !== 'fingerprinting test')
-        })
-        .windowByUrl(Brave.browserWindowUrl)
-        .waitForVisible(braveMenu)
-        .waitForVisible(braveryPanel)
-        .waitUntil(function () {
-          return this.getText(fpStat)
             .then((stat) => stat === '0')
         })
-        .click(fpSwitch)
     })
   })
 })
