@@ -44,6 +44,7 @@ const eventStore = new EventStore()
 const emitChanges = debounce(eventStore.emitChanges.bind(eventStore), 5)
 
 let lastActivePageUrl = null
+let lastActiveTabId = null
 
 const addPageView = (url) => {
   if (url && isSourceAboutUrl(url)) {
@@ -81,6 +82,11 @@ const windowClosed = (windowId) => {
 const doAction = (action) => {
   switch (action.actionType) {
     case WindowConstants.WINDOW_WEBVIEW_LOAD_END:
+      // create a page view event if this is a page load on the active tabId
+      if (action.frameProps.get('tabId') === lastActiveTabId) {
+        addPageView(action.frameProps.get('src'))
+      }
+
       if (action.isError || isSourceAboutUrl(action.frameProps.get('src'))) {
         break
       }
@@ -93,6 +99,7 @@ const doAction = (action) => {
       break
     case WindowConstants.WINDOW_SET_FOCUSED_FRAME:
       addPageView(action.frameProps.get('src'))
+      lastActiveTabId = action.frameProps.get('tabId')
       break
     case AppConstants.APP_CLOSE_WINDOW:
       AppDispatcher.waitFor([AppStore.dispatchToken], () => {
