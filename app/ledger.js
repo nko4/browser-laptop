@@ -364,8 +364,6 @@ var cacheReturnValue = () => {
   cache = returnValue._internal.cache
 
   paymentURL = 'bitcoin:' + info.address + '?amount=' + info.btc + '&label=' + encodeURI('Brave Software')
-  // TBD: TEMPORARY UNTIL bitcoin: handler works [MTR]
-  paymentURL = 'https://www.coinbase.com/checkouts/9dccf22649d8dd6300259d66fef44a4e'
   if (cache.paymentURL === paymentURL) return
 
   cache.paymentURL = paymentURL
