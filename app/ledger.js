@@ -53,7 +53,7 @@ var locations = {}
 var publishers = {}
 
 var currentLocation = 'NOOP'
-var currentTS = underscore.now()
+var currentTimestamp = underscore.now()
 
 var returnValue = {
   enabled: false,
@@ -293,7 +293,7 @@ var synopsisNormalizer = () => {
                  faviconURL: publisher.faviconURL
                }
     if (results[i].protocol) data[i].publisherURL = results[i].protocol + '//' + results[i].publisher
-    // TBD: temporary?!? [MTR]
+    // TBD: remove after post-beta... [MTR]
     if (!data[i].publisherURL) data[i].publisherURL = 'http://' + results[i].publisher
 
     pct[i] = Math.round((results[i].score * 100) / total)
@@ -409,7 +409,7 @@ underscore.keys(fileTypes).forEach((fileType) => {
 signatureMax = Math.ceil(signatureMax * 1.5)
 
 eventStore.addChangeListener(() => {
-  var view
+  var view = eventStore.getState().toJS().page_view
   var info = eventStore.getState().toJS().page_info
 
   if (!util.isArray(info)) return
@@ -434,6 +434,7 @@ eventStore.addChangeListener(() => {
     locations[location] = underscore.omit(page, [ 'url' ])
     if (!page.publisher) return
 
+    publisher = page.publisher
     synopsis.initPublisher(publisher)
     entry = synopsis.publishers[publisher]
     if ((page.protocol) && (!entry.protocol)) entry.protocol = page.protocol
@@ -494,9 +495,6 @@ eventStore.addChangeListener(() => {
     }
   })
 
-  if (info.length === 0) return
-
-  view = underscore.last(info)
   if ((view.url) && (view.timestamp)) visit(view.url, view.timestamp)
 })
 
@@ -580,10 +578,13 @@ var visit = (location, timestamp) => {
   var setLocation = () => {
     var duration, publisher
 
-    if ((!synopsis) || (currentLocation === 'NOOP')) return
+    console.log((location === currentLocation ? 'same' : 'new') + ' location: ' + location)
+    if (!synopsis) return
 
+/*
     console.log('locations[' + currentLocation + ']=' + JSON.stringify(locations[currentLocation], null, 2))
-    if (!locations[currentLocation]) return
+ */
+    if ((location === currentLocation) || (!locations[currentLocation])) return
 
     publisher = locations[currentLocation].publisher
     if (!publisher) return
@@ -594,18 +595,16 @@ var visit = (location, timestamp) => {
     publisherNormalizer()
     delete returnValue.publishers
 
-    if (location === currentLocation) return true
-
-    duration = timestamp - currentTS
+    duration = timestamp - currentTimestamp
     console.log('addVisit ' + currentLocation + ' for ' + moment.duration(duration).humanize())
     synopsis.addPublisher(publisher, duration)
   }
 
-  console.log('\n' + (location === currentLocation ? 'same' : 'new') + ' location: ' + location)
-  if (setLocation()) return
+  setLocation()
+  if (location === currentLocation) return
 
   currentLocation = location.match(/^about/) ? 'NOOP' : location
-  currentTS = timestamp
+  currentTimestamp = timestamp
 }
 
 var handleGeneralCommunication = (event) => {
