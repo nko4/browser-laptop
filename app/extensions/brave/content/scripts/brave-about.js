@@ -22,6 +22,12 @@
     })
     window.dispatchEvent(event)
   })
+  ipcRenderer.on('ledger-updated', (e, settings) => {
+    const event = new window.CustomEvent('ledger-updated', {
+      detail: settings
+    })
+    window.dispatchEvent(event)
+  })
   ipcRenderer.on('site-settings-updated', (e, settings) => {
     const event = new window.CustomEvent('site-settings-updated', {
       detail: settings

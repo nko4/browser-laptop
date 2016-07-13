@@ -23,6 +23,8 @@ var cmds = [
   rebuildCmd,
   'cd ../spellchecker',
   rebuildCmd,
+  'cd ../node-anonize2-relic',
+  rebuildCmd,
   'cd ../keytar',
   rebuildCmd
 ]

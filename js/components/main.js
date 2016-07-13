@@ -55,6 +55,9 @@ const { isIntermediateAboutPage, getBaseUrl } = require('../lib/appUrlUtil')
 const siteSettings = require('../state/siteSettings')
 const urlParse = require('url').parse
 
+// Ledger
+const ledgerInterop = require('../ledgerInterop')
+
 class Main extends ImmutableComponent {
   constructor () {
     super()
@@ -215,20 +218,66 @@ class Main extends ImmutableComponent {
       })
     })
 
-    ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers) => {
+    ipc.on(messages.SEND_XHR_REQUEST, (event, url, nonce, headers, responseType) => {
+// TBD: this is _never_ invoked, and i can't figure out why! [MTR]
+      console.log('XHR: nonce=' + nonce)
       const xhr = new window.XMLHttpRequest()
+
       xhr.open('GET', url)
       if (headers) {
         for (let name in headers) {
           xhr.setRequestHeader(name, headers[name])
         }
       }
-      xhr.send()
-      xhr.onload = () => {
-        ipc.send(messages.GOT_XHR_RESPONSE + nonce,
-                 {statusCode: xhr.status},
-                 xhr.responseText)
+      xhr.responseType = responseType || 'text'
+      xhr.onerror = () => {
+        var oops = 'xhr: target='
+        try { oops += this.target.toString() } catch (ex) { oops += '[' + ex.toString() + ']' }
+        oops += ' type=' + this.type
+        ipc.send(messages.GOT_XHR_RESPONSE + nonce, new Error(oops))
       }
+      xhr.onload = () => {
+        var done, f
+        var response = {}
+
+        // very useful for debugging...
+        for (var p in xhr) { try { response[p] = xhr[p] } catch (ex) { response[p] = ex.toString() } }
+        response.statusCode = xhr.status
+        response.headers = {}
+        xhr.getAllResponseHeaders().split('\r\n').forEach((header) => {
+          var i = header.indexOf(': ')
+
+          if (i > 0) response.headers[header.substring(0, i).toLowerCase()] = header.substring(i + 2)
+        })
+
+        done = (err, result) => { ipc.send(messages.GOT_XHR_RESPONSE + nonce, err, response, result) }
+
+        f = {
+          arraybuffer: () => {
+            var ab = xhr.response
+            var buffer = new Buffer(ab.byteLength)
+            var view = new Uint8Array(ab)
+
+            for (let i = 0; i < buffer.length; i++) buffer[i] = view[i]
+            done(null, buffer)
+          },
+
+          blob: () => {
+            var reader = new window.FileReader()
+
+            reader.readAsDataURL(xhr.response)
+            reader.onloadend = () => { done(null, reader.result) }
+          },
+
+          document: () => { done(null, xhr.responseXML) },
+
+          text: () => { done(null, xhr.responseText) }
+        }[responseType] || (() => { done(null, xhr.response) })
+
+        try { f() } catch (ex) { done(ex) }
+      }
+
+      try { xhr.send() } catch (ex) { ipc.send(messages.GOT_XHR_RESPONSE + nonce, ex) }
     })
 
     ipc.on(messages.SHORTCUT_NEW_FRAME, (event, url, options = {}) => {
@@ -823,6 +872,7 @@ class Main extends ImmutableComponent {
               passwords={this.props.appState.get('passwords')}
               flashInitialized={this.props.appState.get('flashInitialized')}
               allSiteSettings={allSiteSettings}
+              ledger={ledgerInterop.generalCommunications()}
               frameSiteSettings={this.frameSiteSettings(frame.get('location'))}
               frameBraverySettings={this.frameBraverySettings(frame.get('location'))}
               enableNoScript={this.enableNoScript(this.frameSiteSettings(frame.get('location')))}

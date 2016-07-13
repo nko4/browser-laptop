@@ -132,7 +132,11 @@ const messages = {
   // Extensions
   NEW_POPUP_WINDOW: _,
   // NoScript
-  TEMPORARY_ALLOW_SCRIPTS: _ /** @arg {string} origin to allow scripts on */
+  TEMPORARY_ALLOW_SCRIPTS: _, /** @arg {string} origin to allow scripts on */
+  // Ledger
+  LEDGER_PUBLISHER: _,
+  LEDGER_GENERAL_COMMUNICATION: _,
+  LEDGER_UPDATED: _
 }
 
 module.exports = mapValuesByKeys(messages)
