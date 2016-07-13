@@ -31,7 +31,6 @@ const flash = appConfig.resourceNames.FLASH
 
 const isDarwin = navigator.platform === 'MacIntel'
 const isWindows = navigator.platform && navigator.platform.includes('Win')
-// const lang = navigator.language.split('-')[0].split('_')[0] || 'en'
 
 // TODO: Determine this from the l20n file automatically
 const hintCount = 3
@@ -56,7 +55,7 @@ const permissionNames = {
 
 const changeSetting = (cb, key, e) => {
   if (e.target.type === 'checkbox') {
-    cb(key, e.target.checked)
+    cb(key, e.target.value)
   } else {
     let value = e.target.value
     if (e.target.dataset && e.target.dataset.type === 'number') {
@@ -188,10 +187,13 @@ class BitcoinDashboard extends ImmutableComponent {
   goToURL (url) {
     return window.open(url, '_blank')
   }
-  hideOverlay (event) {
+  onMessage (event) {
     if (event.type === 'message' && (!event.data || !event.data.event || event.data.event !== 'modal_closed')) {
       return false
     }
+    this.hideOverlay()
+  }
+  hideOverlay () {
     this.setState({ shouldShowOverlay: false })
   }
   showOverlay (event) {
@@ -199,7 +201,7 @@ class BitcoinDashboard extends ImmutableComponent {
   }
   render () {
     var emptyDialog = true
-    window.addEventListener('message', this.hideOverlay.bind(this), false)
+    window.addEventListener('message', this.onMessage.bind(this), false)
 // if someone can figure out how to get a localized title attribute (bitcoinCopyAddress) here, please do so!
     return <div id='bitcoinDashboard'>
       <ModalOverlay title={'bitcoinBuy'} content={this.getOverlayContent()} emptyDialog={emptyDialog} shouldShow={this.state.shouldShowOverlay} onShow={this.showOverlay.bind(this)} onHide={this.hideOverlay.bind(this)} />
@@ -314,110 +316,6 @@ class TabsTab extends ImmutableComponent {
   }
 }
 
-class SecurityTab extends ImmutableComponent {
-  onToggleFlash (e) {
-    aboutActions.setResourceEnabled(flash, e.target.checked)
-  }
-  render () {
-    return <div>
-      <SettingsList dataL10nId='passwordSettings'>
-        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
-          options={
-            getSetting(settings.PASSWORD_MANAGER_ENABLED, this.props.settings)
-              ? <span className='linkText' data-l10n-id='managePasswords'
-                onClick={aboutActions.newFrame.bind(null, {
-                  location: 'about:passwords'
-                }, true)}></span>
-              : null
-          } />
-        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
-          options={
-            getSetting(settings.LAST_PASS_ENABLED, this.props.settings)
-              ? <span className='linkText' data-l10n-id='preferences'
-                onClick={aboutActions.newFrame.bind(null, {
-                  location: 'chrome-extension://hdokiejnpimakedhajhdlcegeplioahd/tabDialog.html?dialog=preferences&cmd=open'
-                }, true)}></span>
-              : null
-          } />
-        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='pluginSettings'>
-        <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
-      </SettingsList>
-      <div className='subtext'>
-        <span className='fa fa-info-circle' id='flashInfoIcon' />
-        {
-          isDarwin || isWindows
-            ? <span><span data-l10n-id='enableFlashSubtext' />
-              <span className='linkText'onClick={aboutActions.newFrame.bind(null, {
-                location: 'https://get.adobe.com/flashplayer'
-              })}>{'Adobe'}</span>.</span>
-            : <span data-l10n-id='enableFlashSubtextLinux' />
-        }
-      </div>
-      <SitePermissionsPage siteSettings={this.props.siteSettings} />
-    </div>
-  }
-}
-
-class ShieldsTab extends ImmutableComponent {
-  constructor () {
-    super()
-    this.onChangeAdControl = this.onChangeAdControl.bind(this)
-    this.onToggleHTTPSE = this.onToggleSetting.bind(this, httpsEverywhere)
-    this.onToggleSafeBrowsing = this.onToggleSetting.bind(this, safeBrowsing)
-    this.onToggleNoScript = this.onToggleSetting.bind(this, noScript)
-  }
-  onChangeAdControl (e) {
-    if (e.target.value === 'showBraveAds') {
-      aboutActions.setResourceEnabled(adblock, true)
-      aboutActions.setResourceEnabled(trackingProtection, true)
-      aboutActions.setResourceEnabled(adInsertion, true)
-    } else if (e.target.value === 'blockAds') {
-      aboutActions.setResourceEnabled(adblock, true)
-      aboutActions.setResourceEnabled(trackingProtection, true)
-      aboutActions.setResourceEnabled(adInsertion, false)
-    } else {
-      aboutActions.setResourceEnabled(adblock, false)
-      aboutActions.setResourceEnabled(trackingProtection, false)
-      aboutActions.setResourceEnabled(adInsertion, false)
-    }
-  }
-  onChangeCookieControl (e) {
-    aboutActions.setResourceEnabled(cookieblock, e.target.value === 'block3rdPartyCookie')
-  }
-  onToggleSetting (setting, e) {
-    aboutActions.setResourceEnabled(setting, e.target.checked)
-  }
-  render () {
-    return <div id='shieldsContainer'>
-      <SettingsList dataL10nId='braveryDefaults'>
-        <SettingItem dataL10nId='adControl'>
-          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
-            <option data-l10n-id='showBraveAds' value='showBraveAds' />
-            <option data-l10n-id='blockAds' value='blockAds' />
-            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
-          </select>
-        </SettingItem>
-        <SettingItem dataL10nId='cookieControl'>
-          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
-            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
-            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
-          </select>
-        </SettingItem>
-        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
-        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
-        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-      <SettingsList dataL10nId='advancedPrivacySettings'>
-        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-    </div>
-  }
-}
-
 class PaymentsTab extends ImmutableComponent {
   shouldComponentUpdate () { return true }
   componentWillMount () {
@@ -473,127 +371,13 @@ class SyncTab extends ImmutableComponent {
   }
 }
 
-class AdvancedTab extends ImmutableComponent {
-  render () {
-    const defaultZoomSetting = getSetting(settings.DEFAULT_ZOOM_LEVEL, this.props.settings)
-    return <div>
-      <SettingsList dataL10nId='contentRenderingOptions'>
-        <SettingItem dataL10nId='defaultZoomLevel'>
-          <select
-            value={defaultZoomSetting === undefined || defaultZoomSetting === null ? config.zoom.defaultValue : defaultZoomSetting}
-            data-type='float'
-            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_ZOOM_LEVEL)}>
-            {
-              config.zoom.zoomLevels.map((x) =>
-                <option value={x} key={x}>{getZoomValuePercentage(x) + '%'}</option>)
-            }
-          </select>
-        </SettingItem>
-        <SettingCheckbox dataL10nId='useHardwareAcceleration' prefKey={settings.HARDWARE_ACCELERATION_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-        <SettingCheckbox dataL10nId='usePDFJS' prefKey={settings.PDFJS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
-      </SettingsList>
-    </div>
-  }
-}
-
-class HelpfulHints extends ImmutableComponent {
-  render () {
-    return <div className='helpfulHints'>
-      <span className='hintsTitleContainer'>
-        <span data-l10n-id='hintsTitle' />
-        <span className='hintsRefresh fa fa-refresh'
-          onClick={this.props.refreshHint} />
-      </span>
-      <div data-l10n-id={`hint${this.props.hintNumber}`} />
-      <div className='helpfulHintsBottom'>
-        <a data-l10n-id='sendUsFeedback' href={appConfig.contactUrl} />
-      </div>
-    </div>
-  }
-}
-
-class PreferenceNavigationButton extends ImmutableComponent {
-  render () {
-    return <div className={cx({
-      selected: this.props.selected,
-      [this.props.className]: !!this.props.className
-    })}>
-      <div onClick={this.props.onClick}
-        className={cx({
-          topBarButton: true,
-          fa: true,
-          [this.props.icon]: true
-        })}>
-        <i className={this.props.icon.replace('fa-', 'i-')} />
-        <div className='tabMarkerText'
-          data-l10n-id={this.props.dataL10nId} />
-      </div>
-      {
-        this.props.selected
-        ? <div className='tabMarkerContainer'>
-          <div className='tabMarker' />
-        </div>
-        : null
-      }
-    </div>
-  }
-}
-
-class PreferenceNavigation extends ImmutableComponent {
-  render () {
-    return <div className='prefAside'>
-      <div data-l10n-id='prefAsideTitle' />
-      <PreferenceNavigationButton icon='fa-list-alt'
-        dataL10nId='general'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.GENERAL)}
-        selected={this.props.preferenceTab === preferenceTabs.GENERAL}
-      />
-      <PreferenceNavigationButton icon='fa-search'
-        dataL10nId='search'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SEARCH)}
-        selected={this.props.preferenceTab === preferenceTabs.SEARCH}
-      />
-      <PreferenceNavigationButton icon='fa-bookmark-o'
-        dataL10nId='tabs'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.TABS)}
-        selected={this.props.preferenceTab === preferenceTabs.TABS}
-      />
-      <PreferenceNavigationButton icon='fa-lock'
-        dataL10nId='security'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SECURITY)}
-        selected={this.props.preferenceTab === preferenceTabs.SECURITY}
-      />
-      <PreferenceNavigationButton icon='fa-user'
-        dataL10nId='shields'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SHIELDS)}
-        selected={this.props.preferenceTab === preferenceTabs.SHIELDS}
-      />
-      <PreferenceNavigationButton icon='fa-bitcoin'
-        dataL10nId='publishers'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.PUBLISHERS)}
-        selected={this.props.preferenceTab === preferenceTabs.PUBLISHERS}
-      />
-      <PreferenceNavigationButton icon='fa-refresh'
-        dataL10nId='sync'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
-        selected={this.props.preferenceTab === preferenceTabs.SYNC}
-      />
-      <PreferenceNavigationButton icon='fa-server'
-        dataL10nId='advanced'
-        onClick={this.props.changeTab.bind(null, preferenceTabs.ADVANCED)}
-        selected={this.props.preferenceTab === preferenceTabs.ADVANCED}
-      />
-      <HelpfulHints hintNumber={this.props.hintNumber} refreshHint={this.props.refreshHint} />
-    </div>
-  }
-}
-
 class SitePermissionsPage extends React.Component {
   hasEntryForPermission (name) {
     return this.props.siteSettings.some((value) => {
       return value.get ? typeof value.get(name) === permissionNames[name] : false
     })
   }
+
   isPermissionsNonEmpty () {
     // Check whether there is at least one permission set
     return this.props.siteSettings.some((value) => {
@@ -607,9 +391,11 @@ class SitePermissionsPage extends React.Component {
       return false
     })
   }
+
   deletePermission (name, hostPattern) {
     aboutActions.removeSiteSetting(hostPattern, name)
   }
+
   render () {
     return this.isPermissionsNonEmpty()
     ? <div id='sitePermissionsPage'>
@@ -666,6 +452,226 @@ class SitePermissionsPage extends React.Component {
   }
 }
 
+class ShieldsTab extends ImmutableComponent {
+  constructor () {
+    super()
+    this.onChangeAdControl = this.onChangeAdControl.bind(this)
+    this.onToggleHTTPSE = this.onToggleSetting.bind(this, httpsEverywhere)
+    this.onToggleSafeBrowsing = this.onToggleSetting.bind(this, safeBrowsing)
+    this.onToggleNoScript = this.onToggleSetting.bind(this, noScript)
+  }
+  onChangeAdControl (e) {
+    if (e.target.value === 'showBraveAds') {
+      aboutActions.setResourceEnabled(adblock, true)
+      aboutActions.setResourceEnabled(trackingProtection, true)
+      aboutActions.setResourceEnabled(adInsertion, true)
+    } else if (e.target.value === 'blockAds') {
+      aboutActions.setResourceEnabled(adblock, true)
+      aboutActions.setResourceEnabled(trackingProtection, true)
+      aboutActions.setResourceEnabled(adInsertion, false)
+    } else {
+      aboutActions.setResourceEnabled(adblock, false)
+      aboutActions.setResourceEnabled(trackingProtection, false)
+      aboutActions.setResourceEnabled(adInsertion, false)
+    }
+  }
+  onChangeCookieControl (e) {
+    aboutActions.setResourceEnabled(cookieblock, e.target.value === 'block3rdPartyCookie')
+  }
+  onToggleSetting (setting, e) {
+    aboutActions.setResourceEnabled(setting, e.target.value)
+  }
+  render () {
+    return <div id='shieldsContainer'>
+      <SettingsList dataL10nId='braveryDefaults'>
+        <SettingItem dataL10nId='adControl'>
+          <select value={this.props.braveryDefaults.get('adControl')} onChange={this.onChangeAdControl}>
+            <option data-l10n-id='showBraveAds' value='showBraveAds' />
+            <option data-l10n-id='blockAds' value='blockAds' />
+            <option data-l10n-id='allowAdsAndTracking' value='allowAdsAndTracking' />
+          </select>
+        </SettingItem>
+        <SettingItem dataL10nId='cookieControl'>
+          <select value={this.props.braveryDefaults.get('cookieControl')} onChange={this.onChangeCookieControl}>
+            <option data-l10n-id='block3rdPartyCookie' value='block3rdPartyCookie' />
+            <option data-l10n-id='allowAllCookies' value='allowAllCookies' />
+          </select>
+        </SettingItem>
+        <SettingCheckbox checked={this.props.braveryDefaults.get('httpsEverywhere')} dataL10nId='httpsEverywhere' onChange={this.onToggleHTTPSE} />
+        <SettingCheckbox checked={this.props.braveryDefaults.get('safeBrowsing')} dataL10nId='safeBrowsing' onChange={this.onToggleSafeBrowsing} />
+        <SettingCheckbox checked={this.props.braveryDefaults.get('noScript')} dataL10nId='noScript' onChange={this.onToggleNoScript} />
+        <SettingCheckbox dataL10nId='blockCanvasFingerprinting' prefKey={settings.BLOCK_CANVAS_FINGERPRINTING} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+      <SettingsList dataL10nId='advancedPrivacySettings'>
+        <SettingCheckbox dataL10nId='doNotTrack' prefKey={settings.DO_NOT_TRACK} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+    </div>
+  }
+}
+
+class SecurityTab extends ImmutableComponent {
+  onToggleFlash (e) {
+    aboutActions.setResourceEnabled(flash, e.target.value)
+  }
+  render () {
+    return <div>
+      <SettingsList dataL10nId='passwordSettings'>
+        <SettingCheckbox dataL10nId='usePasswordManager' prefKey={settings.PASSWORD_MANAGER_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
+          options={
+            getSetting(settings.PASSWORD_MANAGER_ENABLED, this.props.settings)
+              ? <span className='linkText' data-l10n-id='managePasswords'
+                onClick={aboutActions.newFrame.bind(null, {
+                  location: 'about:passwords'
+                }, true)}></span>
+              : null
+          } />
+        <SettingCheckbox dataL10nId='useOnePassword' prefKey={settings.ONE_PASSWORD_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='useLastPass' prefKey={settings.LAST_PASS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting}
+          options={
+            getSetting(settings.LAST_PASS_ENABLED, this.props.settings)
+              ? <span className='linkText' data-l10n-id='preferences'
+                onClick={aboutActions.newFrame.bind(null, {
+                  location: 'chrome-extension://hdokiejnpimakedhajhdlcegeplioahd/tabDialog.html?dialog=preferences&cmd=open'
+                }, true)}></span>
+              : null
+          } />
+        <SettingCheckbox dataL10nId='useDashlane' prefKey={settings.DASHLANE_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+      <SettingsList dataL10nId='pluginSettings'>
+        <SettingCheckbox checked={this.props.flashInstalled ? this.props.braveryDefaults.get('flash') : false} dataL10nId='enableFlash' onChange={this.onToggleFlash} disabled={!this.props.flashInstalled} />
+      </SettingsList>
+      <div className='subtext'>
+        <span className='fa fa-info-circle' id='flashInfoIcon' />
+        {
+          isDarwin || isWindows
+            ? <span><span data-l10n-id='enableFlashSubtext' />&nbsp;
+              <span className='linkText' onClick={aboutActions.newFrame.bind(null, {
+                location: 'https://get.adobe.com/flashplayer'
+              })}>{'Adobe'}</span>.</span>
+            : <span data-l10n-id='enableFlashSubtextLinux' />
+        }
+      </div>
+      <SitePermissionsPage siteSettings={this.props.siteSettings} />
+    </div>
+  }
+}
+
+class AdvancedTab extends ImmutableComponent {
+  render () {
+    const defaultZoomSetting = getSetting(settings.DEFAULT_ZOOM_LEVEL, this.props.settings)
+    return <div>
+      <SettingsList dataL10nId='contentRenderingOptions'>
+        <SettingItem dataL10nId='defaultZoomLevel'>
+          <select
+            value={defaultZoomSetting === undefined || defaultZoomSetting === null ? config.zoom.defaultValue : defaultZoomSetting}
+            data-type='float'
+            onChange={changeSetting.bind(null, this.props.onChangeSetting, settings.DEFAULT_ZOOM_LEVEL)}>
+            {
+              config.zoom.zoomLevels.map((x) =>
+                <option value={x} key={x}>{getZoomValuePercentage(x) + '%'}</option>)
+            }
+          </select>
+        </SettingItem>
+        <SettingCheckbox dataL10nId='useHardwareAcceleration' prefKey={settings.HARDWARE_ACCELERATION_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+        <SettingCheckbox dataL10nId='usePDFJS' prefKey={settings.PDFJS_ENABLED} settings={this.props.settings} onChangeSetting={this.props.onChangeSetting} />
+      </SettingsList>
+    </div>
+  }
+}
+
+class PreferenceNavigationButton extends ImmutableComponent {
+  render () {
+    return <div className={cx({
+      selected: this.props.selected,
+      [this.props.className]: !!this.props.className
+    })}>
+      <div onClick={this.props.onClick}
+        className={cx({
+          topBarButton: true,
+          fa: true,
+          [this.props.icon]: true
+        })}>
+        <i className={this.props.icon.replace('fa-', 'i-')} />
+        <div className='tabMarkerText'
+          data-l10n-id={this.props.dataL10nId} />
+      </div>
+      {
+        this.props.selected
+        ? <div className='tabMarkerContainer'>
+          <div className='tabMarker' />
+        </div>
+        : null
+      }
+    </div>
+  }
+}
+
+class HelpfulHints extends ImmutableComponent {
+  render () {
+    return <div className='helpfulHints'>
+      <span className='hintsTitleContainer'>
+        <span data-l10n-id='hintsTitle' />
+        <span className='hintsRefresh fa fa-refresh'
+          onClick={this.props.refreshHint} />
+      </span>
+      <div data-l10n-id={`hint${this.props.hintNumber}`} />
+      <div className='helpfulHintsBottom'>
+        <a data-l10n-id='sendUsFeedback' href={appConfig.contactUrl} />
+      </div>
+    </div>
+  }
+}
+
+class PreferenceNavigation extends ImmutableComponent {
+  render () {
+    return <div className='prefAside'>
+      <div data-l10n-id='prefAsideTitle' />
+      <PreferenceNavigationButton icon='fa-list-alt'
+        dataL10nId='general'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.GENERAL)}
+        selected={this.props.preferenceTab === preferenceTabs.GENERAL}
+      />
+      <PreferenceNavigationButton icon='fa-search'
+        dataL10nId='search'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SEARCH)}
+        selected={this.props.preferenceTab === preferenceTabs.SEARCH}
+      />
+      <PreferenceNavigationButton icon='fa-bookmark-o'
+        dataL10nId='tabs'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.TABS)}
+        selected={this.props.preferenceTab === preferenceTabs.TABS}
+      />
+      <PreferenceNavigationButton icon='fa-lock'
+        dataL10nId='security'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SECURITY)}
+        selected={this.props.preferenceTab === preferenceTabs.SECURITY}
+      />
+      <PreferenceNavigationButton icon='fa-user'
+        dataL10nId='shields'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SHIELDS)}
+        selected={this.props.preferenceTab === preferenceTabs.SHIELDS}
+      />
+      <PreferenceNavigationButton icon='fa-bitcoin'
+        dataL10nId='publishers'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.PUBLISHERS)}
+        selected={this.props.preferenceTab === preferenceTabs.PUBLISHERS}
+      />
+      <PreferenceNavigationButton icon='fa-refresh'
+        className='notImplemented'
+        dataL10nId='sync'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.SYNC)}
+        selected={this.props.preferenceTab === preferenceTabs.SYNC}
+      />
+      <PreferenceNavigationButton icon='fa-server'
+        dataL10nId='advanced'
+        onClick={this.props.changeTab.bind(null, preferenceTabs.ADVANCED)}
+        selected={this.props.preferenceTab === preferenceTabs.ADVANCED}
+      />
+      <HelpfulHints hintNumber={this.props.hintNumber} refreshHint={this.props.refreshHint} />
+    </div>
+  }
+}
+
 class AboutPreferences extends React.Component {
   constructor () {
     super()
@@ -681,13 +687,13 @@ class AboutPreferences extends React.Component {
       ledger: []
     }
     aboutActions.checkFlashInstalled()
+    window.addEventListener(messages.LEDGER_UPDATED, (e) => {
+      PaymentsTab.defaultProps.data = e.detail
+    })
     window.addEventListener(messages.SETTINGS_UPDATED, (e) => {
       this.setState({
         settings: Immutable.fromJS(e.detail || {})
       })
-    })
-    window.addEventListener(messages.LEDGER_UPDATED, (e) => {
-      PaymentsTab.defaultProps.data = e.detail
     })
     window.addEventListener(messages.SITE_SETTINGS_UPDATED, (e) => {
       this.setState({
@@ -756,8 +762,8 @@ class AboutPreferences extends React.Component {
       case preferenceTabs.TABS:
         tab = <TabsTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
-      case preferenceTabs.SECURITY:
-        tab = <SecurityTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
+      case preferenceTabs.SYNC:
+        tab = <SyncTab settings={settings} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.SHIELDS:
         tab = <ShieldsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
@@ -765,8 +771,8 @@ class AboutPreferences extends React.Component {
       case preferenceTabs.PUBLISHERS:
         tab = <PaymentsTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} onChangeSetting={this.onChangeSetting} />
         break
-      case preferenceTabs.SYNC:
-        tab = <SyncTab settings={settings} onChangeSetting={this.onChangeSetting} />
+      case preferenceTabs.SECURITY:
+        tab = <SecurityTab settings={settings} siteSettings={siteSettings} braveryDefaults={braveryDefaults} flashInstalled={this.state.flashInstalled} onChangeSetting={this.onChangeSetting} />
         break
       case preferenceTabs.ADVANCED:
         tab = <AdvancedTab settings={settings} onChangeSetting={this.onChangeSetting} />

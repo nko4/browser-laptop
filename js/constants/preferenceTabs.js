@@ -9,10 +9,10 @@ const preferenceTabs = {
   GENERAL: _,
   SEARCH: _,
   TABS: _,
-  SECURITY: _,
-  SHIELDS: _,
-  PUBLISHERS: _,
   SYNC: _,
+  SHIELDS: _,
+  SECURITY: _,
+  PUBLISHERS: _,
   ADVANCED: _
 }
 
